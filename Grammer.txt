@@ -1,0 +1,14 @@
+
+#Grammer
+
+Goal->(Statement;)*
+Statement -> Define | Equation
+Define -> int ID(, ID)* | int ID(, ID)* Operator (Expr)+
+Operator -> -= | += | *= | \= | =
+Equation -> ID Operator Expr 
+Expr -> Term((+|-)Term)*
+Term -> Factor((*|/|%)Factor)*
+Factor -> Final((^)Final)*
+Final -> ID | Num | (Expr)
+ID -> [a-z A-Z]([a-z A-Z] | Num)*
+Num -> 0 | [1-9]([0-9])* | -[1-9]([0-9])*
