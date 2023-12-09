@@ -15,6 +15,7 @@ Num -> 0 | [1-9]([0-9])* | -[1-9]([0-9])*
 If -> if C : Begin (Equation | Loop | Condition)* end ((Elif)* | Else)
 Elif -> elif C : Begin (Equation | Loop | Condition)* end
 Else -> else C : Begin (Equation | Loop | Condition)* end
-C -> Condition (and | or) Condition)*
-Condition -> Expr (<= | >= | == | != | > | <) Expr
+C -> Condition ((and | or) Condition)*
+Condition -> Expr CompOparator Expr
+CompOparator -> (<= | >= | == | != | > | <) 
 Loop -> loopc C : Begin (Equation | Loop | Condition)* end

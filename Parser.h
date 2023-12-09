@@ -37,10 +37,21 @@ class Parser
     return false;
   }
 
-  AST *parseCalc();
+  AST *parseGoal();
   Expr *parseExpr();
   Expr *parseTerm();
   Expr *parseFactor();
+  Expr *parseEquation();
+  Expr *parseLoop();
+  Expr *parseFinal();
+  Expr *parseDefine();
+  Expr *parseIf();
+  Expr *parseC();
+  Expr *parseElif();
+  Expr *parseElse();
+  Expr *parseCondition();
+  Expr *parseStatement();
+  
 
 public:
   Parser(Lexer &Lex) : Lex(Lex), HasError(false)
