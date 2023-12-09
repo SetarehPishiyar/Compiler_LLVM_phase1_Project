@@ -41,7 +41,25 @@ void Lexer::next(Token &token)
       ++end;
     llvm::StringRef Name(BufferPtr, end - BufferPtr);
     Token::TokenKind kind =
-        Name == "type" ? Token::KW_type : (Name == "int" ? Token::KW_int : Token::ident);
+        if (Name=="int")
+          Token::KW_int;
+        else if (Name=="if")
+          Token::KW_if;
+        else if (Name=="elif")
+          Token::KW_elif;
+        else if (Name=="else")
+          Token::KW_else;
+        else if (Name=="loopc")
+          Token::KW_loopc;
+        else if (Name=="begin")
+          Token::KW_begin;
+        else if (Name=="end")
+          Token::KW_end;
+        else if (Name=="and")
+          Token::KW_and;
+        else if (Name=="or")
+          Token::KW_or;
+         
     formToken(token, end, kind);
     return;
   }
@@ -55,6 +73,24 @@ void Lexer::next(Token &token)
     return;
   }
 
+  else if (charinfo::isComparison(*BufferPtr)) 
+  {
+    const char *end = BufferPtr + 1;
+    if (*end == '=')
+      ++end;
+    llvm::StringRef Name(BufferPtr, end - BufferPtr);
+    Token::TokenKind kind =
+        if(Name == '==')
+            Token::equalequal;
+        else if(Name == '>=')
+            Token::biggerequal;
+        else if(Name == '<=')
+            Token::smallerequal;
+        else if(Name == '!=')
+            Token::notequal;
+    formToken(token, end, kind);
+    return;
+  }
   else if (charinfo::isDoubleOp(*BufferPtr)) 
   {
     const char *end = BufferPtr + 1;
@@ -80,6 +116,8 @@ void Lexer::next(Token &token)
   case ch:                                
     formToken(token, BufferPtr + 1, tok); 
     break
+      CASE('>', Token::bigger);
+      CASE('<', Token::smaller);
       CASE('+', Token::plus);
       CASE('-', Token::minus);
       CASE('*', Token::mult);

@@ -41,7 +41,9 @@ class Token {
             KW_else,
             KW_loopc,
             KW_begin,
-            KW_end
+            KW_end,
+            KW_and,
+            KW_or
     }
     private:
         TokenKind Kind;
