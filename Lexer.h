@@ -16,6 +16,7 @@ class Token {
             minusequal,
             multequal,
             divequal,
+            modequal,
             plus,
             minus,
             mult,

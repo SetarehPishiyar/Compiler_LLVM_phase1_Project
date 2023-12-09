@@ -15,7 +15,7 @@ namespace charinfo {
     }
     LLVM_READNONE inline bool is isDoubleOp(char c)
     {
-        return c == '+' || c == '-' || c == '*' || c == '/';
+        return c == '+' || c == '-' || c == '*' || c == '/' || c=='%';
     }
     LLVM_READNONE inline bool is isComparison(char c)
     {
@@ -106,6 +106,8 @@ void Lexer::next(Token &token)
             Token::multequal;
         else if(Name == '/=')
             Token::divequal;
+         else if(Name == '%=')
+            Token::modequal;
     formToken(token, end, kind);
     return;
   }

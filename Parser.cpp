@@ -1,13 +1,134 @@
 #include "Parser.h"
+#include "Lexer.h"
 
 AST *Parser::parse()
 {
-  AST *Res = parseCalc();
-  expect(Token::eoi);
+  AST *Res = parseGoal();
+  //expect(Token::eoi);
   return Res;
 }
+ AST *Parser::parseGoal()
+ {
+   llvm::SmallVector<Expr *> Exprs;
+   while (!Tok.is(Token::eoi))
+   {
+      switch (Tok.getKind())
+      {
+      case Token::KW_int:
+        Expr *left;
+        left = parseDefine();
+        if (left)
+          Exprs.push_back(left);
+        else
+          goto _error2; 
+        break;
 
-AST *Parser::parseClac()
+      case token::id:
+        Expr *left;
+        left = parseEquation();
+        if(left)
+          Exprs.push_back(left);
+        else 
+          goto _error2;
+          break;
+
+      case Token::KW_if:
+        Expr *left;
+        left = parseIf();
+        if(left)
+          Exprs.push_back(left);
+        else    
+          goto _error2;
+          break;
+
+        case Token::KW_loopc:
+          Expr *left;
+          left = parseLoop();
+          if(left)
+            Exprs.push_back(left);
+          else
+            goto _error2;
+            break;
+
+        default: 
+          goto _error2;
+          break;
+      }
+      advance();
+   }
+   return new Goal(vars);
+
+   _error2:
+      while (Tok.getKind() != Token::eoi)
+        advance();
+      return nullptr;
+ }
+
+ Expr *Parser::parseDefine()
+ {
+
+  //Expr *right;
+  llvm::SmallVector<llvm::StringRef, 8> Vars;
+  llvm::SmallVector<Expr * > Right;
+  if(!Tok.is(Token::KW_int))
+    goto _error;
+  advance();
+
+  if(expect(Token::id))
+    goto _error;
+  Vars.push_back(Tok.getText())
+  advance();
+  int count = 1;
+  while (Tok.is(Token::comma))
+  {
+    advance();
+    if(expect(Token::id))
+      goto _error;
+    count++; 
+    Vars.push_back(Tok.getText());
+    advance();
+  }
+  if(Tok.is(Token::equal)){
+      advance();
+      Right.push_back(parseExpr());
+      //right = parseExpr();      //badesh advance konim(toye function)
+      count--;
+
+      while (Tok.is(Token::comma)&&count>=0)
+      {
+        advance();
+        count--;
+        Right.push_back(parseExpr());
+        //right = parseExpr();
+      }
+ }
+  if(expect(Token::semicolon))
+    goto _error;
+  
+  return new Define(Vars,Right);
+  _error:
+    while(Tok.getKind() != Token::eoi)
+      advance();
+    return nullptr;
+ }
+
+
+
+ Expr *Parser::parseEquation
+ {
+    Expr *E;
+    Factor *F;
+    F = (Factor *)(parseFactor());
+
+    if (!Tok.isOneof(Token::equal, Token::plusequal, Token::minusequal,Token::multequal, Token::divequal, Token::modequal))
+    {
+      /* code */
+    }
+    
+ }
+
+
+/*AST *Parser::parseGoal()
 {
   if(Tok.is(Token::KW_int)){
     llvm::SmallVector<llvm::StringRef, 8> Vars;
@@ -31,11 +152,13 @@ AST *Parser::parseClac()
       advance();
     }
 
-    if(Tok.is(Token::equal) || Tok.is(Token::plusequal) || Tok.is(Token::minusequal) || Tok.is(Token::multequal) || Tok.is(Token::divequal)){
+    if(Tok.is(Token::equal) /*|| Tok.is(Token::plusequal) || Tok.is(Token::minusequal) || Tok.is(Token::multequal) || Tok.is(Token::divequal))){
       Vars.push_back(Tok.getText());
       advance();
+
       while(count>0){
-        if(expect(Token::Expr))
+       
+       if(expect(Token::Expr))
         {
           goto here;
         }
@@ -47,6 +170,20 @@ AST *Parser::parseClac()
       
     }
 
+    if (Tok.is(Token::KW_if))
+    {
+       llvm::SmallVector<llvm::StringRef, 8> Vars;
+       advance();
+
+       if (expect(Token::Condition))
+        goto _error;
+
+       Vars.push
+       
+       
+    }
+    
+
 
     here:
     if(consume(Token::semicolon))
@@ -54,6 +191,8 @@ AST *Parser::parseClac()
 
     return new typeDecl(Vars);    
   }
+
+    
 
     if(Tok.is(Token::id))
     {
@@ -167,5 +306,5 @@ AST *Parser::parseClac()
       advance();
   }
   return Res;
-  }
+  }*/
 
