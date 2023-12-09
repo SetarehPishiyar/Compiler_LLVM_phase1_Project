@@ -29,7 +29,19 @@ class Token {
             semicolon,
             comma,
             KW_int,
-            unknown
+            unknown,
+            equalequal,
+            biggerequal,
+            smallerequal,
+            smaller,
+            bigger,
+            notequal,
+            KW_if,
+            KW_elif,
+            KW_else,
+            KW_loopc,
+            KW_begin,
+            KW_end
     }
     private:
         TokenKind Kind;

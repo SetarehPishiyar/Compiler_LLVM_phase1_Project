@@ -2,13 +2,19 @@
 #Grammer
 
 Goal->(Statement;)*
-Statement -> Define | Equation
-Define -> int ID(, ID)* | int ID(, ID)* Operator (Expr)+
+Statement -> Define | Equation | Loop | Condition
+Define -> int ID(, ID)* | int ID(, ID)* = Expr(, Expr)*
 Operator -> -= | += | *= | \= | =
 Equation -> ID Operator Expr 
 Expr -> Term((+|-)Term)*
 Term -> Factor((*|/|%)Factor)*
 Factor -> Final((^)Final)*
-Final -> ID | Num | (Expr)
-ID -> [a-z A-Z]([a-z A-Z] | Num)*
+Final -> ID | Num | "("Expr")"
+ID -> [a-z A-Z]+
 Num -> 0 | [1-9]([0-9])* | -[1-9]([0-9])*
+If -> if C : Begin (Equation | Loop | Condition)* end ((Elif)* | Else)
+Elif -> elif C : Begin (Equation | Loop | Condition)* end
+Else -> else C : Begin (Equation | Loop | Condition)* end
+C -> Condition ((&& | ||) Condition)*
+Condition -> Expr (<= | >= | == | != | > | <) Expr
+Loop -> loopc C : Begin (Equation | Loop | Condition)* end

@@ -17,6 +17,11 @@ namespace charinfo {
     {
         return c == '+' || c == '-' || c == '*' || c == '/';
     }
+    LLVM_READNONE inline bool is isComparison(char c)
+    {
+        return c == '!' || c == '=' || c == '<' || c == '>';
+    }
+
 }
 void Lexer::next(Token &token)
 {
