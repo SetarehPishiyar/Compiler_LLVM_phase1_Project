@@ -41,16 +41,15 @@ class Parser
   Expr *parseExpr();
   Expr *parseTerm();
   Expr *parseFactor();
-  Expr *parseEquation();
-  Expr *parseLoop();
   Expr *parseFinal();
-  Expr *parseDefine();
-  Expr *parseIf();
-  Expr *parseC();
-  Expr *parseElif();
-  Expr *parseElse();
-  Expr *parseCondition();
-  Expr *parseStatement();
+  Expr *parseEquation();
+  AST *parseDefine();
+  IfState *parseIf();
+  ElifState *parseElif(); 
+  ElseState *parseElse(); 
+  LoopcState *parseLoop(); 
+  Condition *parseCondition(); 
+  Conditions *parseConditions(); 
   
 
 public:

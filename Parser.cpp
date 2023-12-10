@@ -1,5 +1,6 @@
 #include "Parser.h"
 #include "Lexer.h"
+#include "AST.h"
 
 AST *Parser::parse()
 {
@@ -116,6 +117,7 @@ AST *Parser::parse()
 
 
  Expr *Parser::parseEquation
+
  {
     Expr *right;
     Final *left;
@@ -161,7 +163,7 @@ AST *Parser::parse()
 
     return new Equation(left, op, right);
  }
- 
+
 
  Expr *Parser::parseExpr()
  {
@@ -237,210 +239,214 @@ Expr *Parser::parseFinal()
     return Res;
 }
 
-Expr *Parser::parseIf()
+IfState *Parser::parseIf()
 {
+  llvm::SmallVector<Equation *> equs;
+  llvm::SmallVector<ElifState *> elifs;
+  ElseState *Else;
+
+  if(expect(Token::KW_if))
+    goto _error;
   
-  Expr *C;
-    if(!Tok.is(Token::KW_if))
+  advance();
+
+  Conditions cons = parseConditions();
+
+  if(expect(Token::colon))
+    goto _error;
+  advance();
+  if(expect(Token::KW_begin))
     goto _error;
   advance();
 
-  C = parseC();   //tahesh advance mikoim(parseC)
-  if(!Tok>is(Token::colon))
+  while (Tok.is(Token::id))
+  {
+    Equation E = parseEquation();
+    equs.push_back(E);
+  }
+  
+  if(expect(Token::KW_end))
     goto _error;
-  adavance();
-  if(!Tok.is(Token::KW_begin))
-    goto _error;
-  advande();
-  Expr *right;
-  right = parseExpr();
-  if(!Tok.is(Token::KW_end))
-    goto _error;
+
   advance();
-  if(Tok.is(Token::KW_elif))
+  
+  while (Tok.is(Token::KW_elif))
+  {
+    ElifState E;
+    E = parseElif();
+    elifs.push_back(E);
+  }
 
+  if(Tok.is(Token::KW_else)){
+    Else = parseElse();
+  }
 
+  return new IfState(cons,equs,elifs,Else);
 }
 
-
-
-/*AST *Parser::parseGoal()
+ElifState *Parser::parseElif()
 {
-  if(Tok.is(Token::KW_int)){
-    llvm::SmallVector<llvm::StringRef, 8> Vars;
-    advance();
 
-    if (expect(Token::id))
-      goto _error;
-    Vars.push_back(Tok.getText());
+  llvm::SmallVector<Equation *> equations;
 
-    advance();
-    int count=1;
-    while (Tok.is(Token::comma))
-    {
-      advance();
-      if (expect(Token::id))
-      {
-        goto _error;
-      }
-      count++;
-      Vars.push_back(Tok.getText());
-      advance();
-    }
+  if(expect(Token::KW_elif))
+    goto _error;
 
-    if(Tok.is(Token::equal) /*|| Tok.is(Token::plusequal) || Tok.is(Token::minusequal) || Tok.is(Token::multequal) || Tok.is(Token::divequal))){
-      Vars.push_back(Tok.getText());
-      advance();
+  advande();
 
-      while(count>0){
-       
-       if(expect(Token::Expr))
-        {
-          goto here;
-        }
-        Vars.push_back(Tok.getText());
-        advance();
-        count--;
-      }
-    }
-      
-    }
+  Conditions cons = parseConditions();
 
-    if (Tok.is(Token::KW_if))
-    {
-       llvm::SmallVector<llvm::StringRef, 8> Vars;
-       advance();
+   if(expect(Token::colon))
+    goto _error;
+  advance();
+  if(expect(Token::KW_begin))
+    goto _error;
+  advance();
 
-       if (expect(Token::Condition))
-        goto _error;
-
-       Vars.push
-       
-       
-    }
-    
-
-
-    here:
-    if(consume(Token::semicolon))
-        goto _error;
-
-    return new typeDecl(Vars);    
-  }
-
-    
-
-    if(Tok.is(Token::id))
-    {
-       Expr *Left = new Final(Final::id, Tok.getText());
-
-    advance();
-    switch (Token.getKind())
-    {
-      case Token::equal:
-          BinaryOp::Operator Op = BinaryOp::equal;
-          Expr *E;
-          advance();
-          break;
-
-      case Token::plusequal:
-          BinaryOp::Operator Op = BinaryOp::plusequal;
-          Expr *E;
-          advance();
-          break;
-          
-      case Token::minusequal:
-          BinaryOp::Operator Op = BinaryOp::minusequal;
-          Expr *E;
-          advance();
-          break;
-
-      case Token::multequal:
-          BinaryOp::Operator Op = BinaryOp::multequal;
-          Expr *E;
-          advance();
-          break;
-
-      case Token::divequal:
-          BinaryOp::Operator Op = BinaryOp::divequal;
-          Expr *E;
-          advance();
-          break;
-      default : goto _error;
-    }
-
-
-    E = parseExpr();
-
-    if (expect(Token::eoi))
-      goto _error;
-
-    Left = new BinaryOp(Op, Left, E);
-    return Left;
-  }
-    
-    Expr *Parser::parseExpr()
-    {
-        Expr *Left = parseTerm();
-        while (Tok.isOneOf(Token::plus, Token::minus)){
-          BinaryOp::Operator Op = Tok.is(Token::plus)? BinaryOp::plus: BinaryOp::minus;
-          advance();
-          Expr *Right = parseTerm();
-          Left = new BinaryOp(Op, Left, Right);
-        }
-        return Left;
-    }
-    Expr *Parser::parseTerm()
-   {
-      Expr *Left = parseFactor();
-      while (Tok.isOneOf(Token::mult, Token::divide, Token::modulus))
-      {
-          BinaryOp::Operator Op =
-          Tok.is(Token::mult) ? BinaryOp::mult : Tok.is(Token::divide) ? BinaryOp::divide :BinaryOp::modulus;
-          advance();
-          Expr *Right = parseFactor();
-          Left = new BinaryOp(Op, Left, Right);
-      }
-  return Left;
-    }
-
- Expr *Parser::parseFactor()
-   {
-      Expr *Left = parseFinal();
-      while (Tok.is(Token::power))
-      {
-          BinaryOp::Operator Op = BinaryOp::power;
-          advance();
-          Expr *Right = parseFinal();
-          Left = new BinaryOp(Op, Left, Right);
-      }
-  return Left;
-  }
-
-  Expr *Parser::parseFinal()
-   {
-  Expr *Res = nullptr;
-  switch (Tok.getKind())
+  while (Tok.is(Token::id))
   {
-  case Token::num:
-    Res = new Factor(Factor::num, Tok.getText());
-    advance();
-    break;
-  case Token::id:
-    Res = new Factor(Factor::id, Tok.getText());
-    advance();
-    break;
-  case Token::paranleft:
-    advance();
-    Res = parseExpr();
-    if (!consume(Token::paranright))
-      break;
-  default:
-    if (!Res)
-      error();
-    while (!Tok.isOneOf(Token::paranright, Token::mult, Token::plus, Token::minus, Token::divide, Token::equal, Token::eoi, Token::plusequal, Token::minusequal, Token::multequal, Token::divequal, Token::modulus, Token::power))
-      advance();
-  }
-  return Res;
-  }*/
+    Equation E = parseEquation();
+    equations.push_back(E);
+  } 
 
+  if(expect(Token::end))
+    goto _error;
+  
+  advance();
+
+  return new ElifState(Cons,equations);
+  
+}
+
+ElseState *Parser::parseElse()
+{
+   llvm::SmallVector<Equation *> equations;
+
+   if(expect(Token::KW_else))
+    goto _error;
+
+  advance();
+ 
+  if(expect(Token::colon))
+    goto _error;
+
+  advance();
+
+  if(expect(Token::KW_begin))
+    goto _error;
+
+  advance();
+
+  while (Tok.is(Token::id))
+  {
+    Equation E = parseEquation();
+    equations.push_back(E);
+  }
+  
+  if(expect(Token::KW_end))
+      goto _error;
+
+  advance();
+
+  return new ElseState(equations);
+
+  }
+  
+  LoopcState *Parser::parseLoopc()
+  {
+    llvm::SmallVector<Equation *> equations;
+
+    if(expect(Token::KW_loopc))
+      goto _error;
+
+    advance();
+
+    Conditions cons = parseConditions();
+
+    if(expect(Token::KW_colon))
+      goto _error;
+
+    advance();
+
+    if(expect(Token::KW_begin))
+      goto _error;
+
+    advance();
+
+    while(Tok.is(Token::id))
+    {
+      Equation E = parseEquation();
+      equations.push_back(E);
+    }
+
+    if(expect(Token::KW_end))
+      goto _error;
+
+    advance();
+    
+    return new LoopcState(cons, equations)
+
+  }
+
+  Condition *Parser::parseCondition()
+  {
+    Expr *left;
+    Expr *right;
+    Condition::CompOp op;
+
+    left = parseExpr();
+    switch (Tok.getKind())
+    {
+    case Token::smaller:
+      op = Condition::CompOp::smaller;
+      break;
+    case Token::bigger:
+      op = Condition::CompOp::bigger;
+      break;
+    case Token::smallerequal:
+      op = Condition::CompOp::smallerequal;
+      break;
+    case Token::biggerequal:
+      op = Condition::CompOp::biggerequal;
+      break;
+    case Token::equalequal:
+      op = Condition::CompOp::equalequal;
+      break;
+    default:
+      goto _error;
+      break;
+    }
+    advance();
+
+    right = parseExpr();
+
+    return new Condition(left, op, right);
+
+  }
+
+  Conditions *Parser::parseConditions()
+  {
+      Condition *left;
+      Conditions::and_or op;
+      Conditions *right;
+
+      left = parseCondition();
+      switch (Tok.getKind())
+      {
+      case Token::KW_and:
+          op = Conditions::and_or::And;
+        break;
+      case Token::KW_or:
+          op = Conditions::and_or::Or;
+        break;
+      
+      default:
+          goto _error;
+        break;
+      }
+      advance();
+
+      right = parseConditions();
+      return new Conditions(left, op, right);
+
+  }

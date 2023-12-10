@@ -31,6 +31,8 @@ public:
   virtual void visit(ElifState &) = 0;
   virtual void visit(ElseState &) = 0;
   virtual void visit(LoopcState &) = 0;
+  virtual void visit(Condition &) = 0;
+  virtual void visit(Conditions &) = 0;
 };
 
 class AST
@@ -199,8 +201,7 @@ class Condition : public Conditions
         bigger,
         smalleequal,
         biggerequal,
-        equalequal,
-        equal
+        equalequal
       };
 
   private :
@@ -278,5 +279,7 @@ public:
     V.visit(*this);
   }
 };
+
+
 
 #endif
