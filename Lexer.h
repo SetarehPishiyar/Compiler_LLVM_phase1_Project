@@ -26,6 +26,7 @@ class Token {
             paranleft,
             paranright,
             id,
+            colon,
             num,
             semicolon,
             comma,

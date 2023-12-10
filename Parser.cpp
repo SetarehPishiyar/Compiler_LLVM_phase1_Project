@@ -105,7 +105,8 @@ AST *Parser::parse()
   if(expect(Token::semicolon))
     goto _error;
   
-  return new Define(Vars,Right);
+ 
+ 
   _error:
     while(Tok.getKind() != Token::eoi)
       advance();
@@ -120,12 +121,118 @@ AST *Parser::parse()
     Factor *F;
     F = (Factor *)(parseFactor());
 
-    if (!Tok.isOneof(Token::equal, Token::plusequal, Token::minusequal,Token::multequal, Token::divequal, Token::modequal))
+    if (!Tok.isOneOf(Token::equal, Token::plusequal, Token::minusequal,Token::multequal, Token::divequal, Token::modequal))
     {
-      /* code */
+      error();
+      return nullptr;
     }
+
+    advance();
+    E = parseExpr();
+
+    return new Equation(F, E);
     
  }
+
+ Expr *Parser::parseExpr()
+ {
+  Expr *left = parseTerm();
+  while (Tok.isOneOf(Token::plus, Token::minus))
+  {
+    BinaryOp::Operator Op =  Tok.is(Token::plus) ? BinaryOp::plus : BinaryOp::minus;
+    advance();
+    Expr *right = parseTerm();
+    left = new BinaryOp(Op, left, right);
+  }
+
+  return left;
+ }
+
+Expr *Parser::parseTerm()
+{
+  Expr *left = parseFactor();
+  while (Tok.isOneOf(Token::mult, Token::divide,Token::modulus))
+  {
+    if(Tok.is(Token::mult))
+      BinaryOp::Operator Op = BinaryOp::mult;
+    else if(Tok.is(Token::divide))
+      BinaryOp::Operator Op = BinaryOp::divide;
+    else if(Tok.is(Token::modulus))
+      BinaryOp::Operator Op = BinaryOp::modulus;
+      advance();
+      Expr *right = parseFactor();
+      left = new BinaryOp(Op, left, right);
+  }
+  return left;
+}
+
+Expr *Parser::parseFactor()
+{
+  Expr *left = parseFinal();
+  while (Tok.is(Token::power))
+  {
+    BinaryOp::Operator Op = BinaryOp::power;
+    advance();
+    Expr *right = parseFinal();
+    left = new BinaryOp(Op, left, right);
+  }
+  return left;
+}
+
+
+Expr *Parser::parseFinal()
+{
+  Expr *Res = nullptr;
+  switch (Tok.getKind())
+    {
+    case Token::num:
+        Res = new Final(Final::num, Tok.getText());
+        advance();
+        break;
+    case Token::id:
+        Res = new Final(Final::id, Tok.getText());
+        advance();
+        break;
+    case Token::paranleft:
+        advance();
+        Res = parseExpr();
+        if (!consume(Token::paranright))
+            break;
+    default: 
+        if (!Res)
+            error();
+        while (!Tok.isOneOf(Token::paranright, Token::mult, Token::plus, Token::minus, Token::divide, Token::eoi, Token::power, Token::modulus))
+            advance();
+        break;
+    }
+    return Res;
+}
+
+Expr *Parser::parseIf()
+{
+  
+  Expr *C;
+    if(!Tok.is(Token::KW_if))
+    goto _error;
+  advance();
+
+  C = parseC();   //tahesh advance mikoim(parseC)
+  if(!Tok>is(Token::colon))
+    goto _error;
+  adavance();
+  if(!Tok.is(Token::KW_begin))
+    goto _error;
+  advande();
+  Expr *right;
+  right = parseExpr();
+  if(!Tok.is(Token::KW_end))
+    goto _error;
+  advance();
+  if(Tok.is(Token::KW_elif))
+
+
+}
+
 
 
 /*AST *Parser::parseGoal()

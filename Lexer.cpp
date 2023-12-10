@@ -120,6 +120,7 @@ void Lexer::next(Token &token)
     break
       CASE('>', Token::bigger);
       CASE('<', Token::smaller);
+      CASE(':', Token::colon);
       CASE('+', Token::plus);
       CASE('-', Token::minus);
       CASE('*', Token::mult);

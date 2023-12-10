@@ -2,7 +2,7 @@
 #Grammer
 
 Goal->(Statement;)*
-Statement -> Define | Equation | Loop | Condition
+Statement -> Define | Equation | Loop | If
 Define -> int ID(, ID)* | int ID(, ID)* = Expr(, Expr)*
 Operator -> -= | += | *= | \= | =
 Equation -> ID Operator Expr 
@@ -12,10 +12,10 @@ Factor -> Final((^)Final)*
 Final -> ID | Num | "("Expr")"
 ID -> [a-z A-Z]+
 Num -> 0 | [1-9]([0-9])* | -[1-9]([0-9])*
-If -> if C : Begin (Equation | Loop | Condition)* end ((Elif)* | Else)
-Elif -> elif C : Begin (Equation | Loop | Condition)* end
-Else -> else C : Begin (Equation | Loop | Condition)* end
+If -> if C : Begin (Equation)* end ((Elif)* | Else)
+Elif -> elif C : Begin (Equation)* end
+Else -> else C : Begin (Equation)* end
 C -> Condition ((and | or) Condition)*
 Condition -> Expr CompOparator Expr
 CompOparator -> (<= | >= | == | != | > | <) 
-Loop -> loopc C : Begin (Equation | Loop | Condition)* end
+Loop -> loopc C : Begin (Equation)* end
