@@ -84,12 +84,16 @@ class Equation : public AST
     }
 
   private:
-    Expr *left;
-    operator op;
+    Final *left;
+    operators op;
     Expr *right;
 
   public:
-    Equation(Expr *left, operator op, Expr *right):left(left),op(op),right(right) {};
+    Equation(Final *left, operators op, Expr *right):left(left),op(op),right(right) {}
+
+  Expr *getLeft() { return *Left; }
+  Expr *getRight() { return *Right; }
+  Operators getOperator() { return Op; }
  
   virtual void accept(ASTVisitor &V) override
   {
@@ -98,17 +102,21 @@ class Equation : public AST
 
 };
 
+
 class IfState : public AST
 {
   private:
-    Conditions *left;
-    Equation *right;
+    Conditions *C;
+    llvm::SmallVector<Equation *> equations;
+    llvm::SmallVector<ElifState *> elifs;
+    ElseState *Else;
 
   public:
-    IfState(Conditions *left, Equation *right) : left(left), right(right) {};
-
-    Conditions *getleft() {return left;}
-    Equation *getright() {return right;}
+    IfState(Conditions *C, llvm::SmallVector<Equation *> equations, llvm::SmallVector<ElifState *> elifs, ElseState *Else) : C(C),equations(equations),elifs(elifs),Else(Else) {}
+    Conditions *getCondition() {return *C;}
+    llvm::SmallVector<Condition *> getEquations() {return equations;}
+    llvm::SmallVector<ElifState *> getelifs() {return elifs;}
+    ElseState *getElse() {return *Else;}
 
     virtual void accept(ASTVisitor &V) override
     {
@@ -116,17 +124,19 @@ class IfState : public AST
     }
 };
 
+
 class ElifState : public IfState
 {
   private:
-    Conditions *left;
-    Equation *right;
+    Conditions *C;
+    llvm::SmallVector<Equation *> equations;
 
   public:
-    ElifState(Conditions *left,Equation *right) : left(left), right(right) {};
+    ElifState( Conditions *C, llvm::SmallVector<Equation *> equations) : C(C),equations(equations) {}
 
-    Conditions *getleft() {return left;}
-    Equation *getright() {return right;}
+    llvm::SmallVector<Equation *> getEquations() {return equations;}
+    Conditions *getCondition() {return *C;}
+
 
     virtual void accept(ASTVisitor &V) override
     {
@@ -137,19 +147,19 @@ class ElifState : public IfState
 class ElseState : IfState
 {
   private:
-    Conditions *left;
-    Equation *right;
+    llvm::SmallVector<Equation *> equations;
 
   public:
-    ElseState(Conditions *left,Equation *right) : left(left), right(right) {};
+    ElseState(llvm::SmallVector<Equation *> equations) : equations(equations) {}
 
-    Conditions *getleft() {return *left;}
-    Equation *getright() {return *right;}
+    llvm::SmallVector<Equation *> getequations() {return equations;}
+
     virtual void accept(ASTVisitor &V) override
     {
       V.visit(&this);
     }
 };
+
 
 class BinaryOp : public Expr
 {
@@ -171,8 +181,8 @@ private:
 
 public:
   BinaryOp(Operator Op, Expr *L, Expr *R) : Op(Op), Left(L), Right(R) {}
-  Expr *getLeft() { return Left; }
-  Expr *getRight() { return Right; }
+  Expr *getLeft() { return *Left; }
+  Expr *getRight() { return *Right; }
   Operator getOperator() { return Op; }
   virtual void accept(ASTVisitor &V) override
   {
@@ -199,11 +209,11 @@ class Condition : public Conditions
     Expr *right;
 
   public :
-  Condition(Expr left, CompOp op, Expr right) : left(left), op(op), right(right) {};
+  Condition(Expr left, CompOp op, Expr right) : left(left), op(op), right(right) {}
 
-  Expr *getleft() {return left;}
+  Expr *getleft() {return *left;}
   CompOp getop()  {return op;}
-  Expr *getright() {return right;}
+  Expr *getright() {return *right;}
   virtual void accept(ASTVisitor &V) override
   {
     V.visit(*this);
@@ -222,14 +232,14 @@ class Conditions : public AST
   private:
     Condition *left;
     and_or op;
-    Condition *right;
+    Conditions *right;
   
   public:
-    Conditions(Condition *left, and_or op, Condition *right) : left(left), op(op), right(right) {};
+    Conditions(Condition *left, and_or op, Conditions *right) : left(left), op(op), right(right) {}
 
     Condition *getleft() {return *left;}
     and_or op() {return op;}
-    Condition *getright() {return right;}
+    Conditions *getright() {return *right;}
 
     virtual void accept(ASTVisitor &V) override
     {
@@ -240,11 +250,11 @@ class Conditions : public AST
 class LoopcState : public AST
 {
   private:
-    Conditions *left;
-    Equation *right;
+    Conditions *C;
+    llvm::SmallVector<Equation *> equations;
   
   public:
-    LoopcState(Conditions *left, Equation *right) : left(left), right() {};
+    LoopcState(Conditions *C, llvm::SmallVector<Equation *> equations) : C(C), equations(equations) {}
 };
 
 

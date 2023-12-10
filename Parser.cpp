@@ -117,9 +117,9 @@ AST *Parser::parse()
 
  Expr *Parser::parseEquation
  {
-    Expr *E;
-    Factor *F;
-    F = (Factor *)(parseFactor());
+    Expr *right;
+    Final *left;
+    left = (Final *)(parseFinal());
 
     if (!Tok.isOneOf(Token::equal, Token::plusequal, Token::minusequal,Token::multequal, Token::divequal, Token::modequal))
     {
@@ -127,12 +127,41 @@ AST *Parser::parse()
       return nullptr;
     }
 
-    advance();
-    E = parseExpr();
+    Equation::operators op;
 
-    return new Equation(F, E);
-    
+    switch (Tok.getKind())
+    {
+    case Token::equal:
+      op = Equation::operators::equal;
+      break;
+    case Token::plusequal:
+      op = Equation::operators::plusequal;
+      break;
+    case Token::minusequal:
+      op = Equation::operators::minusequal;
+      break;
+    case Token::multequal:
+      op = Equation::operators::multequal;
+      break;
+    case Token::divequal:
+      op = Equation::operators::divequal;
+      break;
+    case Token::modequal:
+      op = Equation::operators::modequal;
+      break;
+  
+    default:
+      goto _error;
+      break;
+    }
+
+
+    advance();
+    right = parseExpr();
+
+    return new Equation(left, op, right);
  }
+ 
 
  Expr *Parser::parseExpr()
  {
