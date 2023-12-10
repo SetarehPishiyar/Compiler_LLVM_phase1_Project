@@ -5,48 +5,53 @@
 AST *Parser::parse()
 {
   AST *Res = parseGoal();
-  //expect(Token::eoi);
+  expect(Token::eoi);
   return Res;
 }
- AST *Parser::parseGoal()
+
+AST *Parser::parseGoal()
  {
-   llvm::SmallVector<Expr *> Exprs;
+   llvm::SmallVector<Statement *> stats;
    while (!Tok.is(Token::eoi))
    {
       switch (Tok.getKind())
       {
       case Token::KW_int:
-        Expr *left;
+        Statement *left;
+        &left = Statement::statementType::Define;
         left = parseDefine();
         if (left)
-          Exprs.push_back(left);
+          stats.push_back(left);
         else
           goto _error2; 
         break;
 
       case token::id:
-        Expr *left;
+        Statement *left;
+        &left = Statement::statementType::Equation;
         left = parseEquation();
         if(left)
-          Exprs.push_back(left);
+          stats.push_back(left);
         else 
           goto _error2;
           break;
 
       case Token::KW_if:
-        Expr *left;
+        Statement *left;
+        &left = Statement::statementType::IfState;
         left = parseIf();
         if(left)
-          Exprs.push_back(left);
+          stats.push_back(left);
         else    
           goto _error2;
           break;
 
         case Token::KW_loopc:
-          Expr *left;
+          Statement *left;
+          &left = Statement::statementType::LoopcState;
           left = parseLoop();
           if(left)
-            Exprs.push_back(left);
+            stats.push_back(left);
           else
             goto _error2;
             break;
@@ -65,7 +70,7 @@ AST *Parser::parse()
       return nullptr;
  }
 
- Expr *Parser::parseDefine()
+ Statement *Parser::parseDefine()
  {
 
   //Expr *right;
@@ -116,7 +121,7 @@ AST *Parser::parse()
 
 
 
- Expr *Parser::parseEquation
+ Statement *Parser::parseEquation
 
  {
     Expr *right;

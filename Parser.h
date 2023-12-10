@@ -38,6 +38,7 @@ class Parser
   }
 
   AST *parseGoal();
+  AST *parseStatement();
   Expr *parseExpr();
   Expr *parseTerm();
   Expr *parseFactor();

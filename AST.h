@@ -5,7 +5,9 @@
 #include "llvm/ADT/StringRef.h"
 
 class AST;
+class Goal;
 class Expr;
+class Statement;
 class Final;
 class BinaryOp;
 class Define;
@@ -23,6 +25,8 @@ class ASTVisitor
 public:
   virtual void visit(AST &){};
   virtual void visit(Expr &){};
+  virtual void visit(Goal &) = 0;
+  virtual void visit(Statement &) = 0;
   virtual void visit(Final &) = 0;
   virtual void visit(BinaryOp &) = 0;
   virtual void visit(Define &) = 0;
@@ -48,6 +52,52 @@ class Expr : public AST
   Expr() {}
 };
 
+class Goal : public AST
+{
+  using StatementVector = llvm::SmallVector<Statement *>;
+
+  private:
+    StatementVector stats;
+  
+  public:
+    Goal(llvm::SmallVector<Statement *> stats) : stats(stats){}
+
+    llvm::SmallVector<Statement *> getStats() {return stats;}
+    StatementVector::cont_iterator begin() {return stats.begin();}
+    StatementVector::cont_iterator end() {return stats.end();}
+  
+  virtual void accept(ASTVisitor &V) override
+  {
+      V.visit(&this);
+  }
+
+};
+
+class Statement : public AST
+{
+  public:
+    enum statementType
+    {
+      Equation,
+      Define,
+      LoopcState,
+      IfState
+    }
+
+  private:
+    statementType type;
+  
+  public:
+    statementType getKind(){return type;}
+
+    Statement(statementType type): type(type){}
+
+  virtual void accept(ASTVisitor &V) override
+  {
+      V.visit(&this);
+  }
+  
+};
 
 class Final : public Expr
 {
@@ -72,7 +122,7 @@ public:
   }
 };
 
-class Equation : public AST 
+class Equation : public Statement
 {
   public:
     enum operators 
@@ -105,7 +155,7 @@ class Equation : public AST
 };
 
 
-class IfState : public AST
+class IfState : public Statement
 {
   private:
     Conditions *C;
@@ -248,7 +298,7 @@ class Conditions : public AST
     }
 };
 
-class LoopcState : public AST
+class LoopcState : public Statement
 {
   private:
     Conditions *C;
@@ -259,7 +309,7 @@ class LoopcState : public AST
 };
 
 
-class Define : public AST
+class Define : public Statement
 {
   using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
   VarVector Vars;
