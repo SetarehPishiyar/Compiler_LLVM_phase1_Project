@@ -70,6 +70,33 @@ public:
   }
 };
 
+class Equation : public AST 
+{
+  public:
+    enum operators 
+    {
+      equal,
+      plusequal,
+      minusequal,
+      multequal,
+      divequal,
+      modequal
+    }
+
+  private:
+    Expr *left;
+    operator op;
+    Expr *right;
+
+  public:
+    Equation(Expr *left, operator op, Expr *right):left(left),op(op),right(right) {};
+ 
+  virtual void accept(ASTVisitor &V) override
+  {
+      V.visit(&this);
+  }
+
+};
 
 class IfState : public AST
 {
@@ -78,7 +105,7 @@ class IfState : public AST
     Equation *right;
 
   public:
-    IfState(Conditions *left, Equation *right) : left(left), right(right);
+    IfState(Conditions *left, Equation *right) : left(left), right(right) {};
 
     Conditions *getleft() {return left;}
     Equation *getright() {return right;}
@@ -96,7 +123,7 @@ class ElifState : public IfState
     Equation *right;
 
   public:
-    ElifState(Conditions *left,Equation *right) : left(left), right(right);
+    ElifState(Conditions *left,Equation *right) : left(left), right(right) {};
 
     Conditions *getleft() {return left;}
     Equation *getright() {return right;}
@@ -114,7 +141,7 @@ class ElseState : IfState
     Equation *right;
 
   public:
-    ElseState(Conditions *left,Equation *right) : left(left), right(right);
+    ElseState(Conditions *left,Equation *right) : left(left), right(right) {};
 
     Conditions *getleft() {return *left;}
     Equation *getright() {return *right;}
@@ -133,11 +160,6 @@ public:
     minus,
     mult,
     divide,
-    equal,
-    plusequal,
-    minusequal,
-    multequal,
-    divequal,
     power,
     modulus
   };
@@ -148,8 +170,7 @@ private:
   Operator Op;
 
 public:
-  BinaryOp(Operator Op, Expr *L, Expr *R)
-      : Op(Op), Left(L), Right(R) {}
+  BinaryOp(Operator Op, Expr *L, Expr *R) : Op(Op), Left(L), Right(R) {}
   Expr *getLeft() { return Left; }
   Expr *getRight() { return Right; }
   Operator getOperator() { return Op; }
@@ -178,7 +199,7 @@ class Condition : public Conditions
     Expr *right;
 
   public :
-  Condition(Expr left, CompOp op, Expr right) : left(left), op(op), right(right);
+  Condition(Expr left, CompOp op, Expr right) : left(left), op(op), right(right) {};
 
   Expr *getleft() {return left;}
   CompOp getop()  {return op;}
@@ -204,7 +225,7 @@ class Conditions : public AST
     Condition *right;
   
   public:
-    Conditions(Condition *left, and_or op, Condition *right) : left(left), op(op), right(right);
+    Conditions(Condition *left, and_or op, Condition *right) : left(left), op(op), right(right) {};
 
     Condition *getleft() {return *left;}
     and_or op() {return op;}
@@ -223,24 +244,29 @@ class LoopcState : public AST
     Equation *right;
   
   public:
-    LoopcState(Conditions *left, Equation *right) : left(left), right()
+    LoopcState(Conditions *left, Equation *right) : left(left), right() {};
 };
 
 
-class typeDecl : public AST
+class Define : public AST
 {
   using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
   VarVector Vars;
-  Expr *E;
+  //Expr *E;
+  using ExprVector = llvm::SmallVector<Expr *>;
+  ExprVector Exprs;
 
 public:
-  typeDecl(llvm::SmallVector<llvm::StringRef, 8> Vars)
-      : Vars(Vars) {}
+  Define(llvm::SmallVector<llvm::StringRef, 8> Vars, llvm::SmallVector<Expr *> Exprs): Vars(Vars), Exprs(Exprs) {}
+
   VarVector::const_iterator begin() { return Vars.begin(); }
   VarVector::const_iterator end() { return Vars.end(); }
+  ExprVector::const_iterator begin() {return Exprs.begin();}
+  ExprVector::const_iterator end() {return Exprs.end();}
   virtual void accept(ASTVisitor &V) override
   {
     V.visit(*this);
   }
 };
+
 #endif
