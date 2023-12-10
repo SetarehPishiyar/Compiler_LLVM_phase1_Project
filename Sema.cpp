@@ -23,7 +23,7 @@ public:
   bool hasError() { return HasError; } // Function to check if an error occurred
 
   // Visit function for GSM nodes
-  virtual void visit(GSM &Node) override { 
+  virtual void visit(Goal &Node) override { 
     for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
     {
       (*I)->accept(*this); // Visit each child node
@@ -31,8 +31,8 @@ public:
   };
 
   // Visit function for Factor nodes
-  virtual void visit(Factor &Node) override {
-    if (Node.getKind() == Factor::Ident) {
+  virtual void visit(Final &Node) override {
+    if (Node.getKind() == Final::id) {
       // Check if identifier is in the scope
       if (Scope.find(Node.getVal()) == Scope.end())
         error(Not, Node.getVal());
@@ -52,10 +52,10 @@ public:
     else
       HasError = true;
 
-    if (Node.getOperator() == BinaryOp::Operator::Div && right) {
-      Factor * f = (Factor *)right;
+    if (Node.getOperator() == BinaryOp::Operator::div && right) {
+      Final * f = (Final *)right;
 
-      if (right && f->getKind() == Factor::ValueKind::Number) {
+      if (right && f->getKind() == Final::ValueKind::num) {
         int intval;
         f->getVal().getAsInteger(10, intval);
 
@@ -68,17 +68,17 @@ public:
   };
 
   // Visit function for Assignment nodes
-  virtual void visit(Assignment &Node) override {
-    Factor *dest = Node.getLeft();
+  virtual void visit(Equation &Node) override {
+    Final *dest = Node.getLeft();
 
     dest->accept(*this);
 
-    if (dest->getKind() == Factor::Number) {
+    if (dest->getKind() == Final::num) {
         llvm::errs() << "Assignment destination must be an identifier.";
         HasError = true;
     }
 
-    if (dest->getKind() == Factor::Ident) {
+    if (dest->getKind() == Final::id) {
       // Check if the identifier is in the scope
       if (Scope.find(dest->getVal()) == Scope.end())
         error(Not, dest->getVal());
@@ -88,7 +88,7 @@ public:
       Node.getRight()->accept(*this);
   };
 
-  virtual void visit(Declaration &Node) override {
+  virtual void visit(Define &Node) override {
     for (auto I = Node.begin(), E = Node.end(); I != E;
          ++I) {
       if (!Scope.insert(*I).second)
