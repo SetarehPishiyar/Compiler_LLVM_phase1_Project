@@ -22,7 +22,8 @@ namespace charinfo {
         return c == '!' || c == '=' || c == '<' || c == '>';
     }
 
-}
+};
+
 void Lexer::next(Token &token)
 {
   while (*BufferPtr && charinfo::isWhitespace(*BufferPtr))
