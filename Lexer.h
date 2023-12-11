@@ -7,7 +7,7 @@
 class Lexer;
 
 class Token {
-    friend class Lexer
+    friend class Lexer;
     public:
         enum TokenKind : unsigned short {
             eoi,
@@ -46,7 +46,7 @@ class Token {
             KW_end,
             KW_and,
             KW_or
-    }
+    };
     private:
         TokenKind Kind;
         llvm::StringRef Text;

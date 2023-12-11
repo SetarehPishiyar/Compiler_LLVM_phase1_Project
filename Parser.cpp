@@ -7,7 +7,7 @@ AST *Parser::parse()
   AST *Res = parseGoal();
   expect(Token::eoi);
   return Res;
-}
+};
 
 AST *Parser::parseGoal()
  {
@@ -68,7 +68,7 @@ AST *Parser::parseGoal()
       while (Tok.getKind() != Token::eoi)
         advance();
       return nullptr;
- }
+ };
 
  Statement *Parser::parseDefine()
  {
@@ -117,12 +117,10 @@ AST *Parser::parseGoal()
     while(Tok.getKind() != Token::eoi)
       advance();
     return nullptr;
- }
-
+ };
 
 
  Statement *Parser::parseEquation
-
  {
     Expr *right;
     Final *left;
@@ -132,7 +130,7 @@ AST *Parser::parseGoal()
     {
       error();
       return nullptr;
-    }
+    };
 
     Equation::operators op;
 
@@ -167,7 +165,7 @@ AST *Parser::parseGoal()
     right = parseExpr();
 
     return new Equation(left, op, right);
- }
+ };
 
 
  Expr *Parser::parseExpr()
@@ -182,7 +180,7 @@ AST *Parser::parseGoal()
   }
 
   return left;
- }
+ };
 
 Expr *Parser::parseTerm()
 {
@@ -200,7 +198,7 @@ Expr *Parser::parseTerm()
       left = new BinaryOp(Op, left, right);
   }
   return left;
-}
+};
 
 Expr *Parser::parseFactor()
 {
@@ -213,7 +211,7 @@ Expr *Parser::parseFactor()
     left = new BinaryOp(Op, left, right);
   }
   return left;
-}
+};
 
 
 Expr *Parser::parseFinal()
@@ -242,7 +240,7 @@ Expr *Parser::parseFinal()
         break;
     }
     return Res;
-}
+};
 
 IfState *Parser::parseIf()
 {
@@ -287,7 +285,7 @@ IfState *Parser::parseIf()
   }
 
   return new IfState(cons,equs,elifs,Else);
-}
+};
 
 ElifState *Parser::parseElif()
 {
@@ -321,7 +319,7 @@ ElifState *Parser::parseElif()
 
   return new ElifState(Cons,equations);
   
-}
+};
 
 ElseState *Parser::parseElse()
 {
@@ -355,7 +353,7 @@ ElseState *Parser::parseElse()
 
   return new ElseState(equations);
 
-  }
+  };
   
   LoopcState *Parser::parseLoopc()
   {
@@ -391,7 +389,7 @@ ElseState *Parser::parseElse()
     
     return new LoopcState(cons, equations)
 
-  }
+  };
 
   Condition *Parser::parseCondition()
   {
@@ -427,7 +425,7 @@ ElseState *Parser::parseElse()
 
     return new Condition(left, op, right);
 
-  }
+  };
 
   Conditions *Parser::parseConditions()
   {
@@ -454,4 +452,4 @@ ElseState *Parser::parseElse()
       right = parseConditions();
       return new Conditions(left, op, right);
 
-  }
+  };
