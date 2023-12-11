@@ -53,7 +53,7 @@ namespace
     }
 
     // Visit function for the GSM node in the AST.
-    virtual void visit(GSM &Node) override
+    virtual void visit(Goal &Node) override
     {
       // Iterate over the children of the GSM node and visit each child.
       for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
@@ -128,7 +128,7 @@ namespace
       }
     };
 
-    virtual void visit(Declaration &Node) override
+    virtual void visit(Define &Node) override
     {
       Value *val = nullptr;
 
