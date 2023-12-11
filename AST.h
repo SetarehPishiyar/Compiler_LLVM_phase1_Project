@@ -166,8 +166,7 @@ private:
     llvm::SmallVector<Equation *> Equations;
 
 public:
-    ElseState(llvm::SmallVector<Equation *> Equations) : 
-    Equations(Equations), IfState() {}
+    ElseState(llvm::SmallVector<Equation *> Equations) : Equations(Equations), IfState() {}
 
     llvm::SmallVector<Equation *> getEquation()
     {

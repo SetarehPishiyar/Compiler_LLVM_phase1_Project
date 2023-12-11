@@ -6,7 +6,7 @@
 
 using namespace llvm;
 
-// Define a visitor class for generating LLVM IR from the AST.
+
 namespace
 {
   class ToIRVisitor : public ASTVisitor
@@ -22,11 +22,14 @@ namespace
     Value *V;
     StringMap<AllocaInst *> nameMap;
 
+    llvm::FunctionType* MainFty;
+    llvm::FunctionType* MainFn;
+
   public:
-    // Constructor for the visitor class.
+    
     ToIRVisitor(Module *M) : M(M), Builder(M->getContext())
     {
-      // Initialize LLVM types and constants.
+
       VoidTy = Type::getVoidTy(M->getContext());
       Int32Ty = Type::getInt32Ty(M->getContext());
       Int8PtrTy = Type::getInt8PtrTy(M->getContext());
@@ -34,53 +37,77 @@ namespace
       Int32Zero = ConstantInt::get(Int32Ty, 0, true);
     }
 
-    // Entry point for generating LLVM IR from the AST.
+    
     void run(AST *Tree)
     {
-      // Create the main function with the appropriate function type.
+      
       FunctionType *MainFty = FunctionType::get(Int32Ty, {Int32Ty, Int8PtrPtrTy}, false);
       Function *MainFn = Function::Create(MainFty, GlobalValue::ExternalLinkage, "main", M);
 
-      // Create a basic block for the entry point of the main function.
+      
       BasicBlock *BB = BasicBlock::Create(M->getContext(), "entry", MainFn);
       Builder.SetInsertPoint(BB);
 
-      // Visit the root node of the AST to generate IR.
+      
       Tree->accept(*this);
 
-      // Create a return instruction at the end of the main function.
+      
       Builder.CreateRet(Int32Zero);
     }
 
-    // Visit function for the GSM node in the AST.
+    
     virtual void visit(Goal &Node) override
     {
-      // Iterate over the children of the GSM node and visit each child.
+     
       for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
       {
         (*I)->accept(*this);
       }
     };
 
+    virtual void visit(Statement &Node)
+    {
+      if(Node.getKind() == Statement::StatementType::Equation)
+      {
+        Equation* eq = (Equation*)&Node;
+        eq->accept(*this);
+      }
+      else if(Node.getKind() == Statement::StatementType::Define)
+      {
+        Define* define = (Define*)&Node;
+        define->accept(*this);
+      }
+      else if(Node.getKind() == Statement::StatementType::IfState)
+      {
+        IfState* ifs = (IfState*)&Node;
+        ifs->accept(*this);
+      }
+      else if(Node.getKind() == Statement::StatementType::LoopcState)
+      {
+        LoopcState* loopc = (LoopcState*)&Node;
+        loopc->accept(*this);
+      }
+    };
+
     virtual void visit(Equation &Node) override
     {
-      // Visit the right-hand side of the assignment and get its value.
+     
       Node.getRight()->accept(*this);
       Value *val = V;
 
-      // Get the name of the variable being assigned.
+   
       auto varName = Node.getLeft()->getVal();
 
-      // Create a store instruction to assign the value to the variable.
+      
       Builder.CreateStore(val, nameMap[varName]);
 
-      // Create a function type for the "gsm_write" function.
+      
       FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
 
-      // Create a function declaration for the "gsm_write" function.
+      
       Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "main_write", M);
 
-      // Create a call instruction to invoke the "gsm_write" function with the value.
+      
       CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
     };
 
@@ -88,29 +115,114 @@ namespace
     {
       if (Node.getKind() == Final::id)
       {
-        // If the factor is an identifier, load its value from memory.
+      
         V = Builder.CreateLoad(Int32Ty, nameMap[Node.getVal()]);
       }
       else
       {
-        // If the factor is a literal, convert it to an integer and create a constant.
         int intval;
         Node.getVal().getAsInteger(10, intval);
         V = ConstantInt::get(Int32Ty, intval, true);
       }
     };
 
-    virtual void visit(BinaryOp &Node) override
+    virtual void visit(Expr &Node) override
     {
-      // Visit the left-hand side of the binary operation and get its value.
       Node.getLeft()->accept(*this);
       Value *Left = V;
 
-      // Visit the right-hand side of the binary operation and get its value.
       Node.getRight()->accept(*this);
       Value *Right = V;
 
-      // Perform the binary operation based on the operator type and create the corresponding instruction.
+      switch (Node.getOperator())
+      {
+      case Expr::Operator::plus:
+        V = Builder.CreateNSWAdd(Left, Right);
+        break;
+      case Expr::Operator::minus:
+        V = Builder.CreateNSWSub(Left, Right);
+        break;
+        case Expr::Operator::mult:
+        V = Builder.CreateNSWMul(Left, Right);
+        break;
+        case Expr::Operator::divide:
+        V = Builder.CreateSDiv(Left, Right);
+        break;
+        case Expr::Operator::modulus:
+        {
+          Value* div = Builder.CreateSDiv(Left, Right);
+          Value* mult = Builder.CreateNSWMul(div, Right);
+          V = Builder.CreateNSWSub(Left, mult);
+        break;
+        }
+
+        case Expr::Operator::power:
+        {
+          Final* ff = (Final *) Right;
+          int RightVal;
+          RightVal = ff->getVal().getAsInteger(10, RightVal);
+          if(RightVal == 0)
+          {
+            V = ConstantInt::get(Int32Ty, 1, true);
+            break;
+          }
+          else
+          {
+            for(int i = 1; i < RightVal; i++)
+            {
+              Left = Builder.CreateNSWMul(Left, Left);
+            }
+            V = Left;
+            break;
+          }
+        }
+      
+      }
+    };
+
+    virtual void visit(Condition &Node) override
+    {
+        Node.getLeft()->accept(*this);
+        Value* Left = V;
+        Node.getRight()->accept(*this);
+        Value* Right = V;
+        switch (Node.getSign())
+        {
+        case Condition::Operator::equalequal:
+          V = Builder.CreateICmpEQ(Left, Right);
+          break;
+        case Condition::Operator::smaller:
+          V = Builder.CreateICmpSLT(Left, Right);
+          break;
+        case Condition::Operator::smallerequal:
+          V = Builder.CreateICmpSLE(Left, Right);
+          break;
+        case Condition::Operator::biggerequal:
+          V = Builder.CreateICmpSGE(Left, Right);
+          break;
+        case Condition::Operator::bigger:
+          V = Builder.CreateICmpSGT(Left, Right);
+        case Condition::Operator::notequal:
+          V = Builder.CreateICmpNE(Left, Right);
+          break;
+          break;
+        default:
+          break;
+        }
+
+    };
+
+    virtual void visit(BinaryOp &Node) override
+    {
+     
+      Node.getLeft()->accept(*this);
+      Value *Left = V;
+
+      
+      Node.getRight()->accept(*this);
+      Value *Right = V;
+
+     
       switch (Node.getOperator())
       {
       case BinaryOp::Plus:
@@ -130,43 +242,67 @@ namespace
 
     virtual void visit(Define &Node) override
     {
+      llvm::SmallVector<llvm::StringRef, 8> vars = Node.getVars();
+      llvm::SmallVector<Expr *> Exprs = Node.getExpr();
+      auto expr = Exprs.begin();
       Value *val = nullptr;
-
-      if (Node.getExpr())
+      for(auto var = vars.begin(), var_end = vars.end(); var != var_end; ++var)
       {
-        // If there is an expression provided, visit it and get its value.
-        Node.getExpr()->accept(*this);
-        val = V;
-      }
+        llvm::StringRef Var = *var;
+        Expr* Expr = *expr;
 
-      // Iterate over the variables declared in the declaration statement.
-      for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
-      {
-        StringRef Var = *I;
-
-        // Create an alloca instruction to allocate memory for the variable.
-        nameMap[Var] = Builder.CreateAlloca(Int32Ty);
-
-        // Store the initial value (if any) in the variable's memory location.
-        if (val != nullptr)
+        if(Expr)
         {
-          Builder.CreateStore(val, nameMap[Var]);
+          Expr->accept(*this);
+          val = V;
+          ++expr;
+
+          nameMap[Var] = Builder.CreateAlloca(Int32Ty);
+          if(val != nullptr)
+          {
+            Builder.CreateStore(val, nameMap[Var]);
+          }
+        }
+        else
+        {
+          nameMap[Var] = Builder.CreateAlloca(Int32Ty);
+
+          if(val != nullptr)
+          {
+            Value* zero = ConstantInt::get(Type::getInt32Ty(M->getContext()), 0)
+            Builder.CreateStore(zero, nameMap[Var]);
+          }
         }
       }
     };
+
+    virtual void visit(Conditions &Node) override
+    {
+      Node.getLeft()->accept(*this);
+      Value* Left = V;
+      Node.getRight()->accept(*this);
+      Value* Right = V;
+        switch (Node.getSign())
+      {
+      case Conditions::AndOr::And:
+          V = Builder.CreateAnd(Left, Right);
+          break;
+      case Conditions::AndOr::Or:
+          V = Builder.CreateOr(Left, Right);
+          break;
+      }
+    };
   };
-}; // namespace
+}; 
 
 void CodeGen::compile(AST *Tree)
 {
-  // Create an LLVM context and a module.
+  
   LLVMContext Ctx;
   Module *M = new Module("calc.expr", Ctx);
 
-  // Create an instance of the ToIRVisitor and run it on the AST to generate LLVM IR.
   ToIRVisitor ToIR(M);
   ToIR.run(Tree);
 
-  // Print the generated module to the standard output.
   M->print(outs(), nullptr);
 }
