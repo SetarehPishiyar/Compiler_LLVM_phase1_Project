@@ -23,7 +23,7 @@ namespace
     StringMap<AllocaInst *> nameMap;
 
     llvm::FunctionType* MainFty;
-    llvm::FunctionType* MainFn;
+    llvm::Function* MainFn;
 
   public:
     
@@ -41,8 +41,8 @@ namespace
     void run(AST *Tree)
     {
       
-      FunctionType *MainFty = FunctionType::get(Int32Ty, {Int32Ty, Int8PtrPtrTy}, false);
-      Function *MainFn = Function::Create(MainFty, GlobalValue::ExternalLinkage, "main", M);
+      MainFty = FunctionType::get(Int32Ty, {Int32Ty, Int8PtrPtrTy}, false);
+      MainFn = Function::Create(MainFty, GlobalValue::ExternalLinkage, "main", M);
 
       
       BasicBlock *BB = BasicBlock::Create(M->getContext(), "entry", MainFn);
@@ -296,6 +296,87 @@ namespace
           break;
       }
     };
+
+     virtual void visit(IfState& Node) override{
+      llvm::errs() << "hhh\n";
+      llvm::BasicBlock* IfCondBB = llvm::BasicBlock::Create(M->getContext(), "if.cond", MainFn);
+      llvm::errs() << "hhh\n";
+      llvm::BasicBlock* IfBodyBB = llvm::BasicBlock::Create(M->getContext(), "if.body", MainFn);
+      llvm::errs() << "hhh\n";
+      llvm::BasicBlock* AfterIfBB = llvm::BasicBlock::Create(M->getContext(), "after.if", MainFn);
+      llvm::errs() << "hhh\n";
+      Builder.SetInsertPoint(IfCondBB);
+      Node.getCondition()->accept(*this);
+      llvm::Value* IfCondVal = V;
+      llvm::errs() << "hhh\n";
+
+      Builder.SetInsertPoint(IfBodyBB);
+            llvm::errs() << "hhh\n";
+
+      llvm::SmallVector<Equation* > Equations = Node.getEquation();
+      for (auto I = Equations.begin(), E = Equations.end(); I != E; ++I)
+      {
+        (*I)->accept(*this);
+      }
+      Builder.CreateBr(AfterIfBB);
+            llvm::errs() << "hhh\n";
+
+
+      llvm::BasicBlock* PrevCondBB = IfCondBB;
+      llvm::BasicBlock* PrevBodyBB = IfBodyBB;
+      llvm::Value* PrevCondVal = IfCondVal;
+
+      for (auto& Elif : Node.getElifs()) {
+        llvm::BasicBlock* ElifCondBB = llvm::BasicBlock::Create(M->getContext(), "elif.cond", MainFn);
+        llvm::BasicBlock* ElifBodyBB = llvm::BasicBlock::Create(M->getContext(), "elif.body", MainFn);
+
+        Builder.SetInsertPoint(PrevCondBB);
+        Builder.CreateCondBr(PrevCondVal, PrevBodyBB, ElifCondBB);
+
+        Builder.SetInsertPoint(ElifCondBB);
+        Elif->getCondition()->accept(*this);
+        llvm::Value* ElifCondVal = V;
+        Builder.SetInsertPoint(ElifBodyBB);
+        Elif->accept(*this);
+        Builder.CreateBr(AfterIfBB);
+        PrevCondBB = ElifCondBB;
+        PrevCondVal = ElifCondVal;
+        PrevBodyBB = ElifBodyBB;
+      }
+
+      llvm::BasicBlock* ElseBB = nullptr;
+      ElseState* els = Node.getElse();
+      if (els) {
+          ElseBB = llvm::BasicBlock::Create(M->getContext(), "else.body", MainFn);
+          Builder.SetInsertPoint(ElseBB);
+          Node.getElse()->accept(*this);
+          Builder.CreateBr(AfterIfBB);
+
+          Builder.SetInsertPoint(PrevCondBB);
+          Builder.CreateCondBr(IfCondVal, IfBodyBB, ElseBB);
+      } else {
+          Builder.SetInsertPoint(PrevCondBB);
+          Builder.CreateCondBr(IfCondVal, IfBodyBB, AfterIfBB);
+      }
+
+      Builder.SetInsertPoint(AfterIfBB);
+    }
+
+     virtual void visit(ElifState& Node) override{
+      llvm::SmallVector<Equation* > Equations = Node.getEquation();
+      for (auto I = Equations.begin(), E = Equations.end(); I != E; ++I)
+      {
+        (*I)->accept(*this);
+      }
+    }
+
+      virtual void visit(ElseState& Node) override{
+        llvm::SmallVector<Equation* > Equations = Node.getEquation();
+        for (auto I = Equations.begin(), E = Equations.end(); I != E; ++I)
+      {
+        (*I)->accept(*this);
+      }
+    }
 
     virtual void visit(LoopcState& Node) override
         {
