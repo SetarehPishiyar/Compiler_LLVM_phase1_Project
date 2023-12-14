@@ -58,7 +58,7 @@ AST *Parser::parseGoal()
       }
       advance();
    }
-   return new Goal(vars);
+   return new Goal(stats);
 
    _error2:
       while (Tok.getKind() != Token::eoi)
@@ -73,11 +73,11 @@ AST *Parser::parseGoal()
   llvm::SmallVector<llvm::StringRef, 8> Vars;
   llvm::SmallVector<Expr * > Right;
   if(!Tok.is(Token::KW_int))
-    goto _error;
+    goto _error1;
   advance();
 
   if(expect(Token::id))
-    goto _error;
+    goto _error1;
   Vars.push_back(Tok.getText())
   advance();
   int count = 1;
@@ -85,7 +85,7 @@ AST *Parser::parseGoal()
   {
     advance();
     if(expect(Token::id))
-      goto _error;
+      goto _error1;
     count++; 
     Vars.push_back(Tok.getText());
     advance();
@@ -105,20 +105,19 @@ AST *Parser::parseGoal()
       }
  }
   if(expect(Token::semicolon))
-    goto _error;
+    goto _error1;
 
   return new Define(Vars,Right);
-  
- 
- 
-  _error:
+
+      _error1:
     while(Tok.getKind() != Token::eoi)
       advance();
     return nullptr;
+  
  };
 
 
- Statement *Parser::parseEquation
+ Statement *Parser::parseEquation()
  {
     Expr *right;
     Final *left;
@@ -154,7 +153,7 @@ AST *Parser::parseGoal()
       break;
   
     default:
-      goto _error;
+      goto _error3;
       break;
     }
 
@@ -163,6 +162,11 @@ AST *Parser::parseGoal()
     right = parseExpr();
 
     return new Equation(left, op, right);
+
+        _error3:
+    while(Tok.getKind() != Token::eoi)
+      advance();
+    return nullptr;
  };
 
 
@@ -183,14 +187,15 @@ AST *Parser::parseGoal()
 Expr *Parser::parseTerm()
 {
   Expr *left = parseFactor();
+  Expr::Operator Op;
   while (Tok.isOneOf(Token::mult, Token::divide,Token::modulus))
   {
     if(Tok.is(Token::mult))
-      Expr::Operator Op = Expr::mult;
+      Op = Expr::mult;
     else if(Tok.is(Token::divide))
-      Expr::Operator Op = Expr::divide;
+      Op = Expr::divide;
     else if(Tok.is(Token::modulus))
-      Expr::Operator Op = Expr::modulus;
+      Op = Expr::modulus;
       advance();
       Expr *right = parseFactor();
       left = new Expr(Op, left, right);
@@ -206,7 +211,7 @@ Expr *Parser::parseFactor()
     Expr::Operator Op = Expr::Operator::power;
     advance();
     Expr *right = parseFinal();
-    left = new BinaryOp(Op, left, right);
+    left = new Expr(Op, left, right);
   }
   return left;
 };
@@ -238,6 +243,7 @@ Expr *Parser::parseFinal()
         break;
     }
     return Res;
+
 };
 
 IfState *Parser::parseIf()
@@ -247,17 +253,17 @@ IfState *Parser::parseIf()
   ElseState *Else;
 
   if(expect(Token::KW_if))
-    goto _error;
+    goto _error4;
   
   advance();
 
   Conditions cons = parseConditions();
 
   if(expect(Token::colon))
-    goto _error;
+    goto _error4;
   advance();
   if(expect(Token::KW_begin))
-    goto _error;
+    goto _error4;
   advance();
 
   while (Tok.is(Token::id))
@@ -267,7 +273,7 @@ IfState *Parser::parseIf()
   }
   
   if(expect(Token::KW_end))
-    goto _error;
+    goto _error4;
 
   advance();
   
@@ -283,6 +289,12 @@ IfState *Parser::parseIf()
   }
 
   return new IfState(cons,equs,elifs,Else);
+
+      _error4:
+    while(Tok.getKind() != Token::eoi)
+      advance();
+    return nullptr;
+
 };
 
 ElifState *Parser::parseElif()
@@ -291,17 +303,17 @@ ElifState *Parser::parseElif()
   llvm::SmallVector<Equation *> equations;
 
   if(expect(Token::KW_elif))
-    goto _error;
+    goto _error5;
 
-  advande();
+  advance();
 
   Conditions cons = parseConditions();
 
    if(expect(Token::colon))
-    goto _error;
+    goto _error5;
   advance();
   if(expect(Token::KW_begin))
-    goto _error;
+    goto _error5;
   advance();
 
   while (Tok.is(Token::id))
@@ -310,12 +322,17 @@ ElifState *Parser::parseElif()
     equations.push_back(E);
   } 
 
-  if(expect(Token::end))
-    goto _error;
+  if(expect(Token::KW_end))
+    goto _error5;
   
   advance();
 
-  return new ElifState(Cons,equations);
+  return new ElifState(cons,equations);
+
+      _error5:
+    while(Tok.getKind() != Token::eoi)
+      advance();
+    return nullptr;
   
 };
 
@@ -324,17 +341,17 @@ ElseState *Parser::parseElse()
    llvm::SmallVector<Equation *> equations;
 
    if(expect(Token::KW_else))
-    goto _error;
+    goto _error6;
 
   advance();
  
   if(expect(Token::colon))
-    goto _error;
+    goto _error6;
 
   advance();
 
   if(expect(Token::KW_begin))
-    goto _error;
+    goto _error6;
 
   advance();
 
@@ -345,11 +362,15 @@ ElseState *Parser::parseElse()
   }
   
   if(expect(Token::KW_end))
-      goto _error;
+      goto _error6;
 
   advance();
 
   return new ElseState(equations);
+      _error6:
+    while(Tok.getKind() != Token::eoi)
+      advance();
+    return nullptr;
 
   };
   
@@ -358,19 +379,19 @@ ElseState *Parser::parseElse()
     llvm::SmallVector<Equation *> equations;
 
     if(expect(Token::KW_loopc))
-      goto _error;
+      goto _error7;
 
     advance();
 
     Conditions cons = parseConditions();
 
     if(expect(Token::KW_colon))
-      goto _error;
+      goto _error7;
 
     advance();
 
     if(expect(Token::KW_begin))
-      goto _error;
+      goto _error7;
 
     advance();
 
@@ -381,11 +402,16 @@ ElseState *Parser::parseElse()
     }
 
     if(expect(Token::KW_end))
-      goto _error;
+      goto _error7;
 
     advance();
     
-    return new LoopcState(cons, equations)
+    return new LoopcState(cons, equations);
+
+        _error7:
+    while(Tok.getKind() != Token::eoi)
+      advance();
+    return nullptr;
 
   };
 
@@ -414,7 +440,7 @@ ElseState *Parser::parseElse()
       op = Condition::Operator::equalequal;
       break;
     default:
-      goto _error;
+      goto _error8;
       break;
     }
     advance();
@@ -423,12 +449,17 @@ ElseState *Parser::parseElse()
 
     return new Condition(left, op, right);
 
+        _error8:
+    while(Tok.getKind() != Token::eoi)
+      advance();
+    return nullptr;
+
   };
 
   Conditions *Parser::parseConditions()
   {
       Condition *left;
-      Conditions::and_or op;
+      Conditions::AndOr op;
       Conditions *right;
 
       left = parseCondition();
@@ -442,7 +473,7 @@ ElseState *Parser::parseElse()
         break;
       
       default:
-          goto _error;
+          goto _error9;
         break;
       }
       advance();
@@ -450,4 +481,11 @@ ElseState *Parser::parseElse()
       right = parseConditions();
       return new Conditions(left, op, right);
 
+
+          _error9:
+    while(Tok.getKind() != Token::eoi)
+      advance();
+    return nullptr;
+
   };
+
