@@ -296,8 +296,32 @@ namespace
           break;
       }
     };
+
+    virtual void visit(LoopcState& Node) override
+        {
+          llvm::BasicBlock* WhileCondBB = llvm::BasicBlock::Create(M->getContext(), "loopc condition", MainFn);
+          llvm::BasicBlock* WhileBodyBB = llvm::BasicBlock::Create(M->getContext(), "loopc body", MainFn);
+          llvm::BasicBlock* AfterWhileBB = llvm::BasicBlock::Create(M->getContext(), "after loopc", MainFn);
+
+          Builder.CreateBr(WhileCondBB);
+          Builder.SetInsertPoint(WhileCondBB);
+          Node.getCondition()->accept(*this);
+          Value* val=V;
+          Builder.CreateCondBr(val, WhileBodyBB, AfterWhileBB);
+          Builder.SetInsertPoint(WhileBodyBB);
+          llvm::SmallVector<Equation* > Equations = Node.getEquation();
+          for (auto I = Equations.begin(), E = Equations.end(); I != E; ++I)
+            {
+                (*I)->accept(*this);//TODO: check for I!=E
+            }
+          Builder.CreateBr(WhileCondBB);
+
+          Builder.SetInsertPoint(AfterWhileBB);
+        };
   };
 }; 
+
+
 
 void CodeGen::compile(AST *Tree)
 {
