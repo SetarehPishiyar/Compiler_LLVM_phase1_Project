@@ -67,12 +67,12 @@ namespace
 
     virtual void visit(Statement &Node)
     {
-      if(Node.getKind() == Statement::statementType::Equation)
+      if(Node.getKind() == Statement::statementType::equationState)
       {
         Equation* eq = (Equation*)&Node;
         eq->accept(*this);
       }
-      else if(Node.getKind() == Statement::statementType::Define)
+      else if(Node.getKind() == Statement::statementType::defineState)
       {
         Define* define = (Define*)&Node;
         define->accept(*this);
@@ -92,11 +92,11 @@ namespace
     virtual void visit(Equation &Node) override
     {
      
-      Node.getRight()->accept(*this);
+      Node.getRValue()->accept(*this);
       Value *val = V;
 
    
-      auto varName = Node.getLeft()->getVal();
+      auto varName = Node.getLValue()->getVal();
 
       
       Builder.CreateStore(val, nameMap[varName]);
@@ -212,7 +212,7 @@ namespace
 
     };
 
-    virtual void visit(BinaryOp &Node) override
+    virtual void visit(Expr &Node) override
     {
      
       Node.getLeft()->accept(*this);
@@ -225,16 +225,16 @@ namespace
      
       switch (Node.getOperator())
       {
-      case BinaryOp::Plus:
+      case Expr::plus:
         V = Builder.CreateNSWAdd(Left, Right);
         break;
-      case BinaryOp::Minus:
+      case Expr::minus:
         V = Builder.CreateNSWSub(Left, Right);
         break;
-      case BinaryOp::Mul:
+      case Expr::mult:
         V = Builder.CreateNSWMul(Left, Right);
         break;
-      case BinaryOp::Div:
+      case Expr::divide:
         V = Builder.CreateSDiv(Left, Right);
         break;
       }
@@ -243,7 +243,7 @@ namespace
     virtual void visit(Define &Node) override
     {
       llvm::SmallVector<llvm::StringRef, 8> vars = Node.getVars();
-      llvm::SmallVector<Expr *> Exprs = Node.getExpr();
+      llvm::SmallVector<Expr *> Exprs = Node.getExprs();
       auto expr = Exprs.begin();
       Value *val = nullptr;
       for(auto var = vars.begin(), var_end = vars.end(); var != var_end; ++var)
@@ -269,7 +269,7 @@ namespace
 
           if(val != nullptr)
           {
-            Value* zero = ConstantInt::get(Type::getInt32Ty(M->getContext()), 0)
+            Value* zero = ConstantInt::get(Type::getInt32Ty(M->getContext()), 0);
             Builder.CreateStore(zero, nameMap[Var]);
           }
         }
