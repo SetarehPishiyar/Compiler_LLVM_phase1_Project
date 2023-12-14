@@ -89,43 +89,6 @@ namespace
       }
     };
 
-    virtual void visit(Equation &Node) override
-    {
-     
-      Node.getRight()->accept(*this);
-      Value *val = V;
-
-   
-      auto varName = Node.getLeft()->getVal();
-
-      
-      Builder.CreateStore(val, nameMap[varName]);
-
-      
-      FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
-
-      
-      Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "main_write", M);
-
-      
-      CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
-    };
-
-    virtual void visit(Final &Node) override
-    {
-      if (Node.getKind() == Final::id)
-      {
-      
-        V = Builder.CreateLoad(Int32Ty, nameMap[Node.getVal()]);
-      }
-      else
-      {
-        int intval;
-        Node.getVal().getAsInteger(10, intval);
-        V = ConstantInt::get(Int32Ty, intval, true);
-      }
-    };
-
     virtual void visit(Expr &Node) override
     {
       Node.getLeft()->accept(*this);
@@ -180,6 +143,112 @@ namespace
       }
     };
 
+    virtual void visit(Final &Node) override
+    {
+      if (Node.getKind() == Final::id)
+      {
+      
+        V = Builder.CreateLoad(Int32Ty, nameMap[Node.getVal()]);
+      }
+      else
+      {
+        int number;
+        llvm::StringRef strVal = Node.getVal(); 
+        strVal.getAsInteger(10,number);
+        V = ConstantInt::get(Int32Ty, number, true);
+      }
+    };
+
+    virtual void visit(Equation &Node) override
+    {
+     
+      Node.getRight()->accept(*this);
+      Value *val = V;
+
+      auto varName = Node.getLeft()->getVal();
+      auto op = Node.getAssignmentOP();
+
+      Value* tempVal;
+
+      switch (Node.getAssignmentOP())
+            {
+              case Equation::operators::equal:
+                Builder.CreateStore(val, nameMap[varName]);
+                break;
+              case Equation::operators::divequal:{
+                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+                Builder.CreateStore(Builder.CreateSDiv(tempVal, val), nameMap[varName]);
+                break;
+              }
+              case Equation::operators::modequal:{
+                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+                Value* div = Builder.CreateSDiv(tempVal, val);
+                Value* mult = Builder.CreateNSWMul(div, val);
+                Builder.CreateStore(Builder.CreateNSWSub(tempVal, mult), nameMap[varName]);
+                break;
+              }
+              case Equation::operators::multequal:{
+                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+                Builder.CreateStore(Builder.CreateNSWMul(tempVal, val), nameMap[varName]);
+                break;
+              }
+              case Equation::operators::plusequal:{
+                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+                Builder.CreateStore(Builder.CreateNSWAdd(tempVal, val), nameMap[varName]);
+                break;
+              }
+              case Equation::operators::minusequal:{
+                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+                Builder.CreateStore(Builder.CreateNSWSub(tempVal, val), nameMap[varName]);
+                break;
+              } 
+            }
+      
+      FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
+
+      
+      Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "main_write", M);
+
+      
+      CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
+    };
+
+    virtual void visit(Define &Node) override
+    {
+      llvm::SmallVector<llvm::StringRef, 8> vars = Node.getVars();
+      llvm::SmallVector<Expr *> Exprs = Node.getExprs();
+      auto expr = Exprs.begin();
+      Value *val = nullptr;
+      for(auto var = vars.begin(), var_end = vars.end(); var != var_end; ++var)
+      {
+        llvm::StringRef Var = *var;
+        Expr* ExprTemp = *expr;
+
+        if(ExprTemp)
+        {
+          ExprTemp->accept(*this);
+          val = V;
+          ++expr;
+
+          nameMap[Var] = Builder.CreateAlloca(Int32Ty);
+          if(val != nullptr)
+          {
+            Builder.CreateStore(val, nameMap[Var]);
+          }
+        }
+        else
+        {
+          nameMap[Var] = Builder.CreateAlloca(Int32Ty);
+
+          if(val != nullptr)
+          {
+            Value* zero = ConstantInt::get(Type::getInt32Ty(M->getContext()), 0);
+            Builder.CreateStore(zero, nameMap[Var]);
+          }
+        }
+      }
+    };
+    
     virtual void visit(Condition &Node) override
     {
         Node.getLeft()->accept(*this);
@@ -205,75 +274,10 @@ namespace
         case Condition::Operator::notequal:
           V = Builder.CreateICmpNE(Left, Right);
           break;
-          break;
         default:
           break;
         }
 
-    };
-
-    // virtual void visit(BinaryOp &Node) override
-    // {
-     
-    //   Node.getLeft()->accept(*this);
-    //   Value *Left = V;
-
-      
-    //   Node.getRight()->accept(*this);
-    //   Value *Right = V;
-
-     
-    //   switch (Node.getOperator())
-    //   {
-    //   case BinaryOp::Plus:
-    //     V = Builder.CreateNSWAdd(Left, Right);
-    //     break;
-    //   case BinaryOp::Minus:
-    //     V = Builder.CreateNSWSub(Left, Right);
-    //     break;
-    //   case BinaryOp::Mul:
-    //     V = Builder.CreateNSWMul(Left, Right);
-    //     break;
-    //   case BinaryOp::Div:
-    //     V = Builder.CreateSDiv(Left, Right);
-    //     break;
-    //   }
-    // };
-
-    virtual void visit(Define &Node) override
-    {
-      llvm::SmallVector<llvm::StringRef, 8> vars = Node.getVars();
-      llvm::SmallVector<Expr *> Exprs = Node.getExprs();
-      auto expr = Exprs.begin();
-      Value *val = nullptr;
-      for(auto var = vars.begin(), var_end = vars.end(); var != var_end; ++var)
-      {
-        llvm::StringRef Var = *var;
-        Expr* Expr = *expr;
-
-        if(Expr)
-        {
-          Expr->accept(*this);
-          val = V;
-          ++expr;
-
-          nameMap[Var] = Builder.CreateAlloca(Int32Ty);
-          if(val != nullptr)
-          {
-            Builder.CreateStore(val, nameMap[Var]);
-          }
-        }
-        else
-        {
-          nameMap[Var] = Builder.CreateAlloca(Int32Ty);
-
-          if(val != nullptr)
-          {
-            Value* zero = ConstantInt::get(Type::getInt32Ty(M->getContext()), 0);
-            Builder.CreateStore(zero, nameMap[Var]);
-          }
-        }
-      }
     };
 
     virtual void visit(Conditions &Node) override
