@@ -79,9 +79,9 @@ void Lexer::next(Token &token)
 
   else if (charinfo::isComparison(*BufferPtr)) 
   {
-    const char *end = BufferPtr + 1;
-    if (*end == '=')
-      ++end;
+    const char *end = BufferPtr + 2;
+    // if (*end == '=')
+    //   ++end;
     llvm::StringRef Name(BufferPtr, end - BufferPtr);
     Token::TokenKind kind;
         if(Name == "==")
@@ -97,9 +97,9 @@ void Lexer::next(Token &token)
   }
   else if (charinfo::isDoubleOp(*BufferPtr)) 
   {
-    const char *end = BufferPtr + 1;
-    if (*end == "=")
-      ++end;
+    const char *end = BufferPtr + 2;
+    // if (*end == "=")
+    //   ++end;
     llvm::StringRef Name(BufferPtr, end - BufferPtr);
     Token::TokenKind kind;
         if(Name == "+=")
@@ -117,30 +117,43 @@ void Lexer::next(Token &token)
   }
 
   else { 
-    switch (*BufferPtr) {
-    #define CASE(ch, tok)                   
-  case ch:                                
-    formToken(token, BufferPtr + 1, tok); 
-    break
-      CASE('>', Token::bigger);
-      CASE('<', Token::smaller);
-      CASE(':', Token::colon);
-      CASE('+', Token::plus);
-      CASE('-', Token::minus);
-      CASE('*', Token::mult);
-      CASE('/', Token::divide);
-      CASE('=', Token::equal);
-      CASE('^', Token::power);
-      CASE('%', Token::modulus);
-      CASE('(', Token::Token::paranleft);
-      CASE(')', Token::Token::paranright);
-      CASE(';', Token::Token::semicolon);
-      CASE(',', Token::Token::comma);
-#undef CASE
-    default:
-      formToken(token, BufferPtr + 1, Token::unknown);
-    }
-    return;
+    const char *end = BufferPtr + 1;
+
+    llvm::StringRef Name(BufferPtr, end - BufferPtr);
+    Token::TokenKind kind;
+        if(Name == ">")
+            kind = Token::bigger;
+        else if(Name == "<")
+            kind = Token::smaller;
+        else if(Name == ":")
+            kind = Token::colon;
+        else if(Name == "+")
+            kind = Token::plus;
+        else if(Name == "-")
+            kind = Token::minus;
+        else if(Name == "*")
+            kind = Token::mult;
+        else if(Name == "/")
+            kind = Token::divide;
+        else if(Name == "=")
+            kind = Token::equal;
+        else if(Name == "^")
+            kind = Token::power;
+        else if(Name == "%")
+            kind = Token::modulus;
+        else if(Name == "(")
+            kind = Token::paranleft;
+        else if(Name == ")")
+            kind = Token::paranright;
+        else if(Name == ";")
+            kind = Token::semicolon;
+        else if(Name == ",")
+            kind = Token::comma;
+        else
+            kind = Token::unknown;
+
+        formToken(token, end, kind);
+        return;
   }
 }
 
