@@ -18,7 +18,6 @@ AST *Parser::parseGoal()
       {
       case Token::KW_int:
         Statement *left;
-        &left = Statement::statementType::defineState;
         left = parseDefine();
         if (left)
           stats.push_back(left);
@@ -26,9 +25,8 @@ AST *Parser::parseGoal()
           goto _error2; 
         break;
 
-      case token::id:
+      case Token::id:
         Statement *left;
-        &left = Statement::statementType::equationState;
         left = parseEquation();
         if(left)
           stats.push_back(left);
@@ -38,7 +36,6 @@ AST *Parser::parseGoal()
 
       case Token::KW_if:
         Statement *left;
-        &left = Statement::statementType::IfState;
         left = parseIf();
         if(left)
           stats.push_back(left);
@@ -48,7 +45,6 @@ AST *Parser::parseGoal()
 
         case Token::KW_loopc:
           Statement *left;
-          &left = Statement::statementType::LoopcState;
           left = parseLoop();
           if(left)
             stats.push_back(left);
