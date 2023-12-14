@@ -67,22 +67,22 @@ namespace
 
     virtual void visit(Statement &Node)
     {
-      if(Node.getKind() == Statement::StatementType::Equation)
+      if(Node.getKind() == Statement::statementType::Equation)
       {
         Equation* eq = (Equation*)&Node;
         eq->accept(*this);
       }
-      else if(Node.getKind() == Statement::StatementType::Define)
+      else if(Node.getKind() == Statement::statementType::Define)
       {
         Define* define = (Define*)&Node;
         define->accept(*this);
       }
-      else if(Node.getKind() == Statement::StatementType::IfState)
+      else if(Node.getKind() == Statement::statementType::IfState)
       {
         IfState* ifs = (IfState*)&Node;
         ifs->accept(*this);
       }
-      else if(Node.getKind() == Statement::StatementType::LoopcState)
+      else if(Node.getKind() == Statement::statementType::LoopcState)
       {
         LoopcState* loopc = (LoopcState*)&Node;
         loopc->accept(*this);

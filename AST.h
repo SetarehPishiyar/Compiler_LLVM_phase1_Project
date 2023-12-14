@@ -34,7 +34,7 @@ public:
     virtual void visit(ElifState &) = 0;
     virtual void visit(ElseState &) = 0;
     virtual void visit(Condition &) = 0;
-    virtual void visit(LoocpState &) = 0;
+    virtual void visit(LoopcState &) = 0;
     virtual void visit(Conditions &) = 0;
     virtual void visit(Final &) = 0;
 };
@@ -67,7 +67,7 @@ public:
 class Statement : public AST
 {
 public:
-    enum StatementType
+    enum statementType
     {
         Define,
         Equation,
@@ -76,16 +76,16 @@ public:
     };
 
 private:
-    StatementType Type;
+    statementType Type;
 
 public:
-    StatementType getKind()
+    statementType getKind()
     {
         return Type;
     }
 
 
-    Statement(StatementType type) : Type(type) {}
+    Statement(statementType type) : Type(type) {}
     virtual void accept(ASTVisitor &V) override
     {
         V.visit(*this);
@@ -102,9 +102,9 @@ private:
     ElseState *Else;
 
 public:
-    IfStatement(Conditions *condition, llvm::SmallVector<Equation *> Equations,llvm::SmallVector<ElifState *> Elifs,ElseState *Else) : 
-    condition(condition), Equations(Equations), Statement(Statement::StatementType::If), Elifs(Elifs), Else(Else) {}
-    IfStatement(): Statement(Statement::StatementType::If) {}
+    IfState(Conditions *condition, llvm::SmallVector<Equation *> Equations,llvm::SmallVector<ElifState *> Elifs,ElseState *Else) : 
+    condition(condition), Equations(Equations), Statement(Statement::statementType::IfState), Elifs(Elifs), Else(Else) {}
+    IfState(): Statement(Statement::statementType::IfState) {}
 
     Conditions *getCondition()
     {
@@ -140,7 +140,7 @@ private:
     llvm::SmallVector<Equation *> Equations;
 
 public:
-    ElifStatement(Conditions *condition, llvm::SmallVector<Equation *> Equations) :
+    ElifState(Conditions *condition, llvm::SmallVector<Equation *> Equations) :
      condition(condition), Equation(Equations), IfState() {}
 
     Conditions *getCondition()
@@ -188,8 +188,8 @@ private:
     llvm::SmallVector<Equation *> Equations;
 
 public:
-    LoopcState(Conditions *condition, llvm::SmallVector<Equation *> Equations) : 
-    condition(condition), Equations(Equations), Statement(Statement::StatementType::IfState) {}
+    LoopcState(Conditions *condition, llvm::SmallVector<Equation * > Equations) : 
+    condition(condition), Equations(Equations), Statement(Statement::statementType::IfState) {}
 
     Conditions *getCondition()
     {
@@ -215,7 +215,7 @@ private:
 
 public:
     Define(llvm::SmallVector<llvm::StringRef, 8> vars, llvm::SmallVector<Expr *> exprs) :
-        vars(vars), exprs(exprs), Statement(Statement::StatementType::Define) {}
+        vars(vars), exprs(exprs), Statement(Statement::statementType::Define) {}
 
     llvm::SmallVector<llvm::StringRef, 8> getVars()
     {
@@ -236,7 +236,7 @@ public:
 class Equation : public Statement
 {
 public:
-    enum AssOp
+    enum operators
     {
         plusequal,
         minusequal,
@@ -248,12 +248,12 @@ public:
 
 private:
     Final *lvalue;
-    AssOp AssignmentOp;
+    operators AssignmentOp;
     Expr *rvalue;
 
 public:
-    Equation(Final *lvalue, AssOp AssignmentOp, Expr *rvalue) :
-     lvalue(lvalue), AssignmentOp(AssignmentOp), rvalue(rvalue), Statement(StatementType::Equation) {}
+    Equation(Final *lvalue, operators AssignmentOp, Expr *rvalue) :
+     lvalue(lvalue), AssignmentOp(AssignmentOp), rvalue(rvalue), Statement(statementType::Equation) {}
     Final *getLValue()
     {
         return lvalue;
@@ -264,7 +264,7 @@ public:
         return rvalue;
     }
 
-    AssOp getAssignmentOP()
+    operators getAssignmentOP()
     {
         return AssignmentOp;
     }
@@ -345,11 +345,11 @@ class Condition : public Conditions
 public:
     enum Operator
     {
-        lessequal,
-        less,
+        smallerequal,
+        smaller,
         bigger,
         biggerequal,
-        equal,
+        equalequal,
         notequal
     };
 

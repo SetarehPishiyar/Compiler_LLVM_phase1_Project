@@ -110,6 +110,8 @@ AST *Parser::parseGoal()
  }
   if(expect(Token::semicolon))
     goto _error;
+
+  return new Define(Vars,Right);
   
  
  
@@ -173,10 +175,10 @@ AST *Parser::parseGoal()
   Expr *left = parseTerm();
   while (Tok.isOneOf(Token::plus, Token::minus))
   {
-    BinaryOp::Operator Op =  Tok.is(Token::plus) ? BinaryOp::plus : BinaryOp::minus;
+    Expr::Operator Op =  Tok.is(Token::plus) ? Expr::Operator::plus : Expr::Operator::minus;
     advance();
     Expr *right = parseTerm();
-    left = new BinaryOp(Op, left, right);
+    left = new Expr(Op, left, right);
   }
 
   return left;
@@ -188,14 +190,14 @@ Expr *Parser::parseTerm()
   while (Tok.isOneOf(Token::mult, Token::divide,Token::modulus))
   {
     if(Tok.is(Token::mult))
-      BinaryOp::Operator Op = BinaryOp::mult;
+      Expr::Operator Op = Expr::mult;
     else if(Tok.is(Token::divide))
-      BinaryOp::Operator Op = BinaryOp::divide;
+      Expr::Operator Op = Expr::divide;
     else if(Tok.is(Token::modulus))
-      BinaryOp::Operator Op = BinaryOp::modulus;
+      Expr::Operator Op = Expr::modulus;
       advance();
       Expr *right = parseFactor();
-      left = new BinaryOp(Op, left, right);
+      left = new Expr(Op, left, right);
   }
   return left;
 };
@@ -205,7 +207,7 @@ Expr *Parser::parseFactor()
   Expr *left = parseFinal();
   while (Tok.is(Token::power))
   {
-    BinaryOp::Operator Op = BinaryOp::power;
+    Expr::Operator Op = Expr::Operator::power;
     advance();
     Expr *right = parseFinal();
     left = new BinaryOp(Op, left, right);
@@ -395,25 +397,25 @@ ElseState *Parser::parseElse()
   {
     Expr *left;
     Expr *right;
-    Condition::CompOp op;
+    Condition::Operator op;
 
     left = parseExpr();
     switch (Tok.getKind())
     {
     case Token::smaller:
-      op = Condition::CompOp::smaller;
+      op = Condition::Operator::smaller;
       break;
     case Token::bigger:
-      op = Condition::CompOp::bigger;
+      op = Condition::Operator::bigger;
       break;
     case Token::smallerequal:
-      op = Condition::CompOp::smallerequal;
+      op = Condition::Operator::smallerequal;
       break;
     case Token::biggerequal:
-      op = Condition::CompOp::biggerequal;
+      op = Condition::Operator::biggerequal;
       break;
     case Token::equalequal:
-      op = Condition::CompOp::equalequal;
+      op = Condition::Operator::equalequal;
       break;
     default:
       goto _error;
@@ -437,10 +439,10 @@ ElseState *Parser::parseElse()
       switch (Tok.getKind())
       {
       case Token::KW_and:
-          op = Conditions::and_or::And;
+          op = Conditions::AndOr::And;
         break;
       case Token::KW_or:
-          op = Conditions::and_or::Or;
+          op = Conditions::AndOr::Or;
         break;
       
       default:
