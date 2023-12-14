@@ -1,7 +1,8 @@
 #include "Lexer.h"
 
-namespace charinfo {
-    LLVM_READONE inline bool isWhitespace(char c){
+namespace charinfo
+{
+    LLVM_READNONE inline bool isWhitespace(char c){
          return c == ' ' || c == '\t' || c == '\f' || c == '\v' ||
            c == '\r' || c == '\n';
     }
@@ -13,16 +14,16 @@ namespace charinfo {
     {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
     }
-    LLVM_READNONE inline bool is isDoubleOp(char c)
+    LLVM_READNONE inline bool isDoubleOp(char c)
     {
         return c == '+' || c == '-' || c == '*' || c == '/' || c=='%';
     }
-    LLVM_READNONE inline bool is isComparison(char c)
+    LLVM_READNONE inline bool isComparison(char c)
     {
         return c == '!' || c == '=' || c == '<' || c == '>';
     }
 
-};
+}
 
 void Lexer::next(Token &token)
 {
@@ -41,25 +42,27 @@ void Lexer::next(Token &token)
     while (charinfo::isLetter(*end))
       ++end;
     llvm::StringRef Name(BufferPtr, end - BufferPtr);
-    Token::TokenKind kind =
+    Token::TokenKind kind;
         if (Name=="int")
-          Token::KW_int;
+          kind = Token::KW_int;
         else if (Name=="if")
-          Token::KW_if;
+          kind = Token::KW_if;
         else if (Name=="elif")
-          Token::KW_elif;
+          kind = Token::KW_elif;
         else if (Name=="else")
-          Token::KW_else;
+          kind = Token::KW_else;
         else if (Name=="loopc")
-          Token::KW_loopc;
+          kind = Token::KW_loopc;
         else if (Name=="begin")
-          Token::KW_begin;
+          kind = Token::KW_begin;
         else if (Name=="end")
-          Token::KW_end;
+          kind = Token::KW_end;
         else if (Name=="and")
-          Token::KW_and;
+          kind = Token::KW_and;
         else if (Name=="or")
-          Token::KW_or;
+          kind = Token::KW_or;
+        else
+          kind = Token::id;
          
     formToken(token, end, kind);
     return;
@@ -70,7 +73,7 @@ void Lexer::next(Token &token)
     const char *end = BufferPtr + 1;
     while (charinfo::isDigit(*end))
       ++end;
-    formToken(token, end, Token::number);
+    formToken(token, end, Token::num);
     return;
   }
 
@@ -80,42 +83,42 @@ void Lexer::next(Token &token)
     if (*end == '=')
       ++end;
     llvm::StringRef Name(BufferPtr, end - BufferPtr);
-    Token::TokenKind kind =
-        if(Name == '==')
-            Token::equalequal;
-        else if(Name == '>=')
-            Token::biggerequal;
-        else if(Name == '<=')
-            Token::smallerequal;
-        else if(Name == '!=')
-            Token::notequal;
+    Token::TokenKind kind;
+        if(Name == "==")
+            kind = Token::equalequal;
+        else if(Name == ">=")
+            kind = Token::biggerequal;
+        else if(Name == "<=")
+           kind =  Token::smallerequal;
+        else if(Name == "!=")
+            kind = Token::notequal;
     formToken(token, end, kind);
     return;
   }
   else if (charinfo::isDoubleOp(*BufferPtr)) 
   {
     const char *end = BufferPtr + 1;
-    if (*end == '=')
+    if (*end == "=")
       ++end;
     llvm::StringRef Name(BufferPtr, end - BufferPtr);
-    Token::TokenKind kind =
-        if(Name == '+=')
-            Token::plusequal;
-        else if(Name == '-=')
-            Token::minusequal;
-        else if(Name == '*=')
-            Token::multequal;
-        else if(Name == '/=')
-            Token::divequal;
-         else if(Name == '%=')
-            Token::modequal;
+    Token::TokenKind kind;
+        if(Name == "+=")
+            kind = Token::plusequal;
+        else if(Name == "-=")
+            kind = Token::minusequal;
+        else if(Name == "*=")
+            kind = Token::multequal;
+        else if(Name == "/=")
+            kind = Token::divequal;
+         else if(Name == "%=")
+            kind = Token::modequal;
     formToken(token, end, kind);
     return;
   }
 
   else { 
     switch (*BufferPtr) {
-    #define CASE(ch, tok)                     
+    #define CASE(ch, tok)                   
   case ch:                                
     formToken(token, BufferPtr + 1, tok); 
     break
