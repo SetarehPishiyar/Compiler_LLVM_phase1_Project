@@ -92,11 +92,11 @@ namespace
     virtual void visit(Equation &Node) override
     {
      
-      Node.getRValue()->accept(*this);
+      Node.getRight()->accept(*this);
       Value *val = V;
 
    
-      auto varName = Node.getLValue()->getVal();
+      auto varName = Node.getLeft()->getVal();
 
       
       Builder.CreateStore(val, nameMap[varName]);
@@ -212,33 +212,33 @@ namespace
 
     };
 
-    virtual void visit(Expr &Node) override
-    {
+    // virtual void visit(BinaryOp &Node) override
+    // {
      
-      Node.getLeft()->accept(*this);
-      Value *Left = V;
+    //   Node.getLeft()->accept(*this);
+    //   Value *Left = V;
 
       
-      Node.getRight()->accept(*this);
-      Value *Right = V;
+    //   Node.getRight()->accept(*this);
+    //   Value *Right = V;
 
      
-      switch (Node.getOperator())
-      {
-      case Expr::plus:
-        V = Builder.CreateNSWAdd(Left, Right);
-        break;
-      case Expr::minus:
-        V = Builder.CreateNSWSub(Left, Right);
-        break;
-      case Expr::mult:
-        V = Builder.CreateNSWMul(Left, Right);
-        break;
-      case Expr::divide:
-        V = Builder.CreateSDiv(Left, Right);
-        break;
-      }
-    };
+    //   switch (Node.getOperator())
+    //   {
+    //   case BinaryOp::Plus:
+    //     V = Builder.CreateNSWAdd(Left, Right);
+    //     break;
+    //   case BinaryOp::Minus:
+    //     V = Builder.CreateNSWSub(Left, Right);
+    //     break;
+    //   case BinaryOp::Mul:
+    //     V = Builder.CreateNSWMul(Left, Right);
+    //     break;
+    //   case BinaryOp::Div:
+    //     V = Builder.CreateSDiv(Left, Right);
+    //     break;
+    //   }
+    // };
 
     virtual void visit(Define &Node) override
     {

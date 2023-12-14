@@ -254,12 +254,12 @@ private:
 public:
     Equation(Final *lvalue, operators AssignmentOp, Expr *rvalue) :
      lvalue(lvalue), AssignmentOp(AssignmentOp), rvalue(rvalue), Statement(statementType::equationState) {}
-    Final *getLValue()
+    Final *getLeft()
     {
         return lvalue;
     }
 
-    Expr *getRValue()
+    Expr *getRight()
     {
         return rvalue;
     }
