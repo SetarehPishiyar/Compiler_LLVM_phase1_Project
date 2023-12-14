@@ -69,8 +69,8 @@ class Statement : public AST
 public:
     enum statementType
     {
-        Define,
-        Equation,
+        defineState,
+        equationState,
         IfState,
         LoopcState
     };
@@ -141,7 +141,7 @@ private:
 
 public:
     ElifState(Conditions *condition, llvm::SmallVector<Equation *> Equations) :
-     condition(condition), Equation(Equations), IfState() {}
+     condition(condition), Equations(Equations), IfState() {}
 
     Conditions *getCondition()
     {
@@ -215,7 +215,7 @@ private:
 
 public:
     Define(llvm::SmallVector<llvm::StringRef, 8> vars, llvm::SmallVector<Expr *> exprs) :
-        vars(vars), exprs(exprs), Statement(Statement::statementType::Define) {}
+        vars(vars), exprs(exprs), Statement(Statement::statementType::defineState) {}
 
     llvm::SmallVector<llvm::StringRef, 8> getVars()
     {
@@ -253,7 +253,7 @@ private:
 
 public:
     Equation(Final *lvalue, operators AssignmentOp, Expr *rvalue) :
-     lvalue(lvalue), AssignmentOp(AssignmentOp), rvalue(rvalue), Statement(statementType::Equation) {}
+     lvalue(lvalue), AssignmentOp(AssignmentOp), rvalue(rvalue), Statement(statementType::equationState) {}
     Final *getLValue()
     {
         return lvalue;

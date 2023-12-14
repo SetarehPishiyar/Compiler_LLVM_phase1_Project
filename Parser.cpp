@@ -18,7 +18,7 @@ AST *Parser::parseGoal()
       {
       case Token::KW_int:
         Statement *left;
-        &left = Statement::statementType::Define;
+        &left = Statement::statementType::defineState;
         left = parseDefine();
         if (left)
           stats.push_back(left);
@@ -28,7 +28,7 @@ AST *Parser::parseGoal()
 
       case token::id:
         Statement *left;
-        &left = Statement::statementType::Equation;
+        &left = Statement::statementType::equationState;
         left = parseEquation();
         if(left)
           stats.push_back(left);
