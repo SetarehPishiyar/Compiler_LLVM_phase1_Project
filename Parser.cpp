@@ -16,10 +16,9 @@ AST *Parser::parseGoal()
    {
       switch (Tok.getKind())
       {
-          Statement *left;
-
       case Token::KW_int:
-        left = (Statement*)parseDefine();
+        Define *left;
+        left = parseDefine();
         if (left)
           stats.push_back(left);
         else
@@ -27,28 +26,28 @@ AST *Parser::parseGoal()
         break;
 
       case Token::id:
-        // Statement *left;
-        left = (Statement*)parseEquation();
-        if(left)
-          stats.push_back(left);
+        Equation *left2;
+        left2 = parseEquation();
+        if(left2)
+          stats.push_back(left2);
         else 
           goto _error2;
           break;
 
       case Token::KW_if:
-        // Statement *left;
-        left = (Statement*)parseIf();
-        if(left)
-          stats.push_back(left);
+        IfState *left3;
+        left3 = parseIf();
+        if(left3)
+          stats.push_back(left3);
         else    
           goto _error2;
           break;
 
         case Token::KW_loopc:
-          // Statement *left;
-          left = (Statement*)parseLoop();
-          if(left)
-            stats.push_back(left);
+          LoopcState *left4;
+          left4 = parseLoop();
+          if(left4)
+            stats.push_back(left4);
           else
             goto _error2;
             break;
