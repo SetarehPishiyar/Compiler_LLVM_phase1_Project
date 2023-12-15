@@ -43,8 +43,8 @@ class Parser
   Expr *parseTerm();
   Expr *parseFactor();
   Expr *parseFinal();
-  Expr *parseEquation();
-  AST *parseDefine();
+  Equation *parseEquation();
+  Define *parseDefine();
   IfState *parseIf();
   ElifState *parseElif(); 
   ElseState *parseElse(); 
