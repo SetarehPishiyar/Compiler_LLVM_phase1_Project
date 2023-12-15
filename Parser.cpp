@@ -66,7 +66,7 @@ AST *Parser::parseGoal()
       return nullptr;
  };
 
- Statement *Parser::parseDefine()
+ Define *Parser::parseDefine()
  {
 
   //Expr *right;
@@ -117,7 +117,7 @@ AST *Parser::parseGoal()
  };
 
 
- Statement *Parser::parseEquation()
+ Equation *Parser::parseEquation()
  {
     Expr *right;
     Final *left;
